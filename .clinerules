@@ -1,0 +1,44 @@
+# Proyek
+Prototype web upscaling video: user upload video -> worker jalankan Topaz -> user download hasil.
+Stack: Python 3.11+, FastAPI, Jinja2, HTMX, SQLite (sqlite3 bawaan). Localhost, Windows.
+Status dan keputusan terkini ada di NOTES.md.
+
+# Mulai tugas
+- Baca NOTES.md dulu sebelum mengerjakan apa pun.
+- Tugas non-trivial: ajukan rencana singkat dulu, tunggu persetujuan.
+
+# Command
+- Venv: python -m venv .venv ; .venv\Scripts\activate
+- Install: pip install fastapi uvicorn jinja2 python-multipart
+- Web: uvicorn app.main:app --reload
+- Worker: python -m app.worker
+- Tes alur tanpa GPU: set FAKE_TOPAZ=1 sebelum menjalankan worker
+
+# Batasan prototype (jangan dilanggar)
+- TANPA CSS (tidak ada <style>, tidak ada file css). HTML polos.
+- TANPA login, kuota, payment, After Effects.
+- Tanpa library tambahan selain yang di daftar install. Tanya dulu kalau butuh.
+- HTMX sebagai file lokal di app/static/htmx.min.js, bukan CDN.
+- Semua path dan setting di app/config.py. Tidak hardcode di tempat lain.
+- Jinja autoescape tetap aktif.
+- subprocess pakai list argumen, jangan shell=True.
+- Nama file upload di disk pakai UUID, bukan nama dari user.
+- JANGAN mengarang nama model atau parameter filter Topaz. Pakai placeholder di config.py dengan komentar jelas. User yang mengisi.
+
+# Kualitas
+- Kode sesederhana mungkin. Satu tugas = satu perubahan fokus.
+- Jangan ubah file di luar lingkup tugas.
+- Sebelum bilang selesai: jalankan alur dengan FAKE_TOPAZ=1 dan cek kriteria selesai tugas.
+- Kalau tidak yakin atau info kurang, tanya. Jangan menebak.
+
+# Git (wajib)
+- Repo sudah git init. Commit SETELAH tiap langkah yang sudah jalan dan teruji.
+- Jangan commit kode yang rusak atau belum dites.
+- Format pesan: tipe: ringkasan singkat (contoh: feat: upload form dan tabel jobs; fix: reset job processing saat worker start).
+- Pastikan data/, .venv/, __pycache__/, dan file video tidak ikut commit (lihat .gitignore).
+- DILARANG tanpa izin eksplisit user: git push, git reset --hard, git rebase, git push --force, git clean, menghapus branch.
+- Rollback dilakukan user. Kalau diminta, jelaskan dulu commit mana yang akan dikembalikan dan efeknya.
+
+# Akhir tugas
+- Update NOTES.md: apa yang selesai, apa yang belum, keputusan baru, masalah terbuka.
+- Beri ringkasan singkat: file yang diubah, hasil tes, commit terakhir.
