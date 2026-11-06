@@ -1,5 +1,5 @@
 # Proyek
-Prototype web upscaling video: user upload video -> worker jalankan Topaz -> user download hasil.
+Prototype web enhancement video: user upload video -> worker jalankan Topaz -> user download hasil.
 Stack: Python 3.11+, FastAPI, Jinja2, HTMX, SQLite (sqlite3 bawaan). Localhost, Dev di macOS, produksi di Windows.
 Status dan keputusan terkini ada di NOTES.md.
 

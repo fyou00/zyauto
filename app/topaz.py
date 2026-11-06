@@ -1,9 +1,10 @@
-"""Menjalankan upscaling. Mode FAKE_TOPAZ=1 memakai app/fake_topaz.py.
+"""Menjalankan enhancement. Mode FAKE_TOPAZ=1 memakai app/fake_topaz.py.
 
-Mode asli (Topaz) belum dikerjakan: langkah 7 di NOTES.md.
+Mode asli memanggil ffmpeg Topaz (config.TOPAZ_*), dengan batas waktu yang mematikan seluruh pohon proses.
 """
 
 import os
+import signal
 import subprocess
 import sys
 from pathlib import Path
@@ -21,7 +22,8 @@ def is_fake_mode():
 
 def run_upscale(input_path: Path, output_path: Path, timeout_sec: int):
     if not is_fake_mode():
-        raise TopazError("Topaz belum dikonfigurasi")
+        _run_topaz(input_path, output_path, timeout_sec)
+        return
 
     cmd = [
         sys.executable,
@@ -42,3 +44,77 @@ def run_upscale(input_path: Path, output_path: Path, timeout_sec: int):
         raise TopazError("fake topaz gagal")
     if not output_path.exists():
         raise TopazError("Output tidak ditemukan")
+
+
+def _run_topaz(input_path: Path, output_path: Path, timeout_sec: int):
+    missing = [
+        name
+        for name, value in (
+            ("TOPAZ_FFMPEG_PATH", config.TOPAZ_FFMPEG_PATH),
+            ("TOPAZ_FILTER", config.TOPAZ_FILTER),
+            ("TVAI_MODEL_DIR", config.TVAI_MODEL_DIR),
+            ("TVAI_MODEL_DATA_DIR", config.TVAI_MODEL_DATA_DIR),
+        )
+        if not value
+    ]
+    if missing:
+        raise TopazError("Topaz belum dikonfigurasi, kosong: " + ", ".join(missing))
+
+    cmd = [
+        config.TOPAZ_FFMPEG_PATH,
+        "-hide_banner", "-nostdin", "-y", "-nostats",
+        "-i", str(input_path),
+        *config.TOPAZ_ENCODE_ARGS,
+        "-filter_complex", config.TOPAZ_FILTER,
+        *config.TOPAZ_ENCODE_ARGS_TAIL,
+        str(output_path),
+    ]
+    env = {
+        **os.environ,
+        "TVAI_MODEL_DIR": config.TVAI_MODEL_DIR,
+        "TVAI_MODEL_DATA_DIR": config.TVAI_MODEL_DATA_DIR,
+    }
+    proc = _start(cmd, env)
+    try:
+        _, stderr = proc.communicate(timeout=timeout_sec)
+    except subprocess.TimeoutExpired:
+        _kill_tree(proc)
+        proc.communicate()
+        raise TopazError(f"Timeout setelah {timeout_sec} detik")
+
+    if proc.returncode != 0:
+        # stderr berisi log ffmpeg dan path lokal: hanya ke log, bukan ke DB/UI
+        print(stderr.strip(), file=sys.stderr, flush=True)
+        raise TopazError("topaz gagal")
+    if not output_path.exists():
+        raise TopazError("Output tidak ditemukan")
+
+
+def _start(cmd, env):
+    kwargs = {}
+    if os.name != "nt":
+        kwargs["start_new_session"] = True  # pgid = pid, supaya seluruh grup bisa dibunuh
+    try:
+        return subprocess.Popen(
+            cmd,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            env=env,
+            **kwargs,
+        )
+    except OSError:
+        raise TopazError("TOPAZ_FFMPEG_PATH tidak bisa dijalankan")
+
+
+def _kill_tree(proc):
+    if os.name == "nt":
+        subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True)
+        return
+    try:
+        os.killpg(proc.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
