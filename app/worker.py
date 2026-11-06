@@ -28,6 +28,9 @@ def process_job(job):
 
 def main():
     db.init_db()
+    requeued, failed = db.reset_processing_jobs()
+    if requeued or failed:
+        print(f"recovery: {requeued} dikembalikan ke queued, {failed} ditandai failed", flush=True)
     print("worker start", flush=True)
     while True:
         job = db.claim_next_job()

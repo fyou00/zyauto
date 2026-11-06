@@ -86,6 +86,25 @@ def claim_next_job():
         conn.close()
 
 
+def reset_processing_jobs():
+    """Dipanggil saat worker start: job yang tertinggal 'processing' (worker mati) dikembalikan.
+
+    attempts < MAX_ATTEMPTS -> queued lagi; sudah habis percobaannya -> failed.
+    """
+    with get_conn() as conn:
+        requeued = conn.execute(
+            "UPDATE jobs SET status = 'queued', started_at = NULL "
+            "WHERE status = 'processing' AND attempts < ?",
+            (config.MAX_ATTEMPTS,),
+        ).rowcount
+        failed = conn.execute(
+            "UPDATE jobs SET status = 'failed', error = ?, finished_at = ? "
+            "WHERE status = 'processing' AND attempts >= ?",
+            ("gagal setelah percobaan maksimal (worker terhenti)", now_iso(), config.MAX_ATTEMPTS),
+        ).rowcount
+        return requeued, failed
+
+
 def mark_done(job_id, output_path):
     with get_conn() as conn:
         conn.execute(

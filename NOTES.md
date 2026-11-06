@@ -9,7 +9,7 @@ Buktikan alur: upload video -> worker proses Topaz -> download hasil. Localhost,
 - [x] 3. Daftar job dengan HTMX polling
 - [x] 4. Worker: ambil job, mode FAKE_TOPAZ, ubah status
 - [x] 5. Download hasil
-- [ ] 6. Recovery: job 'processing' kembali 'queued' saat worker start; timeout job
+- [x] 6. Recovery: job 'processing' kembali 'queued' saat worker start; timeout job
 - [ ] 7. Integrasi Topaz asli (isi TOPAZ_FFMPEG_PATH, TVAI_* env, TOPAZ_FILTER)
 
 Commit terakhir: feat: daftar job dengan polling htmx
@@ -42,3 +42,5 @@ Commit terakhir: feat: daftar job dengan polling htmx
 - Keputusan: error tak terduga di worker ditangkap sebagai failed (pesan "error tak terduga: <tipe>"), supaya worker tidak mati dan job tidak tertinggal di processing.- Langkah 5 selesai. GET /jobs/{id}/download: 404 jika job tidak ada/belum done/file hilang. Nama unduhan upscaled_<stem>.<ext>, stem disanitasi (karakter aneh -> _, tanpa path). Link Download di tabel hanya untuk status done dengan output_path.
 - Tes: cmp hasil j1 (mp4) dan j2 (mov) sama dengan upload; queued -> 404; ID tidak ada -> 404; jumlah link Download = jumlah job done; sanitasi nama uji: "Liburan Bali (1).mp4" -> Liburan_Bali_1, "../../etc/passwd.mov" -> passwd.
 - Perubahan di luar daftar PLAN: tambah db.get_job(). Temuan: job done tanpa output_path bisa muncul (data manual); link sekarang hanya tampil jika output_path ada.
+- Langkah 6 selesai. Worker start: job processing dikembalikan ke queued jika attempts < MAX_ATTEMPTS (2), selain itu failed ("gagal setelah percobaan maksimal (worker terhenti)"). Timeout: subprocess.run(timeout=JOB_TIMEOUT_SEC) -> failed "Timeout setelah N detik".
+- Tes: processing attempts=1 -> queued -> done; attempts=2 -> failed; timeout (JOB_TIMEOUT_SEC=2, delay 10) -> failed dengan pesan timeout; py_compile ok. Nilai 25 menit tetap di config.py.
