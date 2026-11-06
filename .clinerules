@@ -1,6 +1,6 @@
 # Proyek
 Prototype web upscaling video: user upload video -> worker jalankan Topaz -> user download hasil.
-Stack: Python 3.11+, FastAPI, Jinja2, HTMX, SQLite (sqlite3 bawaan). Localhost, Windows.
+Stack: Python 3.11+, FastAPI, Jinja2, HTMX, SQLite (sqlite3 bawaan). Localhost, Dev di macOS, produksi di Windows.
 Status dan keputusan terkini ada di NOTES.md.
 
 # Mulai tugas
@@ -8,11 +8,12 @@ Status dan keputusan terkini ada di NOTES.md.
 - Tugas non-trivial: ajukan rencana singkat dulu, tunggu persetujuan.
 
 # Command
-- Venv: python -m venv .venv ; .venv\Scripts\activate
-- Install: pip install fastapi uvicorn jinja2 python-multipart
+- Venv: python3 -m venv .venv ; source .venv/bin/activate
+- Install: pip install -r requirements.txt
 - Web: uvicorn app.main:app --reload
 - Worker: python -m app.worker
-- Tes alur tanpa GPU: set FAKE_TOPAZ=1 sebelum menjalankan worker
+- Tes tanpa GPU: FAKE_TOPAZ=1 python -m app.worker
+- (Windows) aktivasi venv: .venv\Scripts\activate ; env var lewat file .env
 
 # Batasan prototype (jangan dilanggar)
 - TANPA CSS (tidak ada <style>, tidak ada file css). HTML polos.
@@ -24,6 +25,13 @@ Status dan keputusan terkini ada di NOTES.md.
 - subprocess pakai list argumen, jangan shell=True.
 - Nama file upload di disk pakai UUID, bukan nama dari user.
 - JANGAN mengarang nama model atau parameter filter Topaz. Pakai placeholder di config.py dengan komentar jelas. User yang mengisi.
+
+# Lintas platform (macOS dev, Windows produksi)
+- Pakai pathlib.Path. Jangan hardcode path mesin tertentu.
+- File teks: encoding="utf-8" eksplisit.
+- Setting spesifik mesin lewat .env (dibaca config.py). .env tidak di-commit.
+- Timeout harus mematikan seluruh pohon proses (ffmpeg anak), bukan cuma induk. Harus jalan di Windows dan macOS.
+- Skrip Python via subprocess: pakai sys.executable.
 
 # Kualitas
 - Kode sesederhana mungkin. Satu tugas = satu perubahan fokus.
