@@ -8,7 +8,7 @@ Buktikan alur: upload video -> worker proses Topaz -> download hasil. Localhost,
 - [x] 2. Halaman upload + validasi file + simpan job (queued)
 - [x] 3. Daftar job dengan HTMX polling
 - [x] 4. Worker: ambil job, mode FAKE_TOPAZ, ubah status
-- [ ] 5. Download hasil
+- [x] 5. Download hasil
 - [ ] 6. Recovery: job 'processing' kembali 'queued' saat worker start; timeout job
 - [ ] 7. Integrasi Topaz asli (isi TOPAZ_FFMPEG_PATH, TVAI_* env, TOPAZ_FILTER)
 
@@ -39,4 +39,6 @@ Commit terakhir: feat: daftar job dengan polling htmx
 - Langkah 3 selesai. HTMX 2.0.11 lokal di app/static/htmx.min.js (dari jsDelivr, bukan CDN saat runtime). GET /jobs di-poll tiap 3 detik (POLL_INTERVAL_SEC). Nama job di-escape Jinja.
 - Tes: /static/htmx.min.js 200; status diubah manual muncul di GET /jobs; tabel kosong menampilkan "Belum ada job."
 - Langkah 4 selesai. Worker satu proses, claim atomic (BEGIN IMMEDIATE), ambil job queued tertua. Tes: FAKE dua job berurutan -> done + cmp sama; tanpa FAKE -> failed "Topaz belum dikonfigurasi"; input hilang -> failed dengan pesan singkat (stderr hanya ke log worker, bukan ke DB/UI); worker tetap hidup.
-- Keputusan: error tak terduga di worker ditangkap sebagai failed (pesan "error tak terduga: <tipe>"), supaya worker tidak mati dan job tidak tertinggal di processing.
+- Keputusan: error tak terduga di worker ditangkap sebagai failed (pesan "error tak terduga: <tipe>"), supaya worker tidak mati dan job tidak tertinggal di processing.- Langkah 5 selesai. GET /jobs/{id}/download: 404 jika job tidak ada/belum done/file hilang. Nama unduhan upscaled_<stem>.<ext>, stem disanitasi (karakter aneh -> _, tanpa path). Link Download di tabel hanya untuk status done dengan output_path.
+- Tes: cmp hasil j1 (mp4) dan j2 (mov) sama dengan upload; queued -> 404; ID tidak ada -> 404; jumlah link Download = jumlah job done; sanitasi nama uji: "Liburan Bali (1).mp4" -> Liburan_Bali_1, "../../etc/passwd.mov" -> passwd.
+- Perubahan di luar daftar PLAN: tambah db.get_job(). Temuan: job done tanpa output_path bisa muncul (data manual); link sekarang hanya tampil jika output_path ada.

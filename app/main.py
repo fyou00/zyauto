@@ -1,11 +1,12 @@
 """Route FastAPI: halaman upload dan pembuatan job."""
 
+import re
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -36,6 +37,25 @@ def list_jobs(request: Request):
         request,
         "_jobs.html",
         {"jobs": db.list_jobs(), "poll_sec": config.POLL_INTERVAL_SEC},
+    )
+
+
+UNSAFE_CHARS = re.compile(r"[^A-Za-z0-9._-]+")
+
+
+@app.get("/jobs/{job_id}/download")
+def download_job(job_id: str):
+    job = db.get_job(job_id)
+    if job is None or job["status"] != "done" or not job["output_path"]:
+        raise HTTPException(404, "Hasil belum tersedia")
+    output_path = Path(job["output_path"])
+    if not output_path.is_file():
+        raise HTTPException(404, "Hasil belum tersedia")
+    stem = UNSAFE_CHARS.sub("_", Path(job["original_name"]).stem).strip("._") or "video"
+    return FileResponse(
+        output_path,
+        filename=f"upscaled_{stem}.{job['ext']}",
+        media_type="application/octet-stream",
     )
 
 

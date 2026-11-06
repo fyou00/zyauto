@@ -102,6 +102,12 @@ def mark_failed(job_id, error):
         )
 
 
+def get_job(job_id):
+    with get_conn() as conn:
+        row = conn.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
+        return dict(row) if row else None
+
+
 def create_job(job_id, original_name, ext, input_path, size_bytes):
     with get_conn() as conn:
         conn.execute(
