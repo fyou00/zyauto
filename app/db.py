@@ -2,6 +2,7 @@
 
 import sqlite3
 from contextlib import contextmanager
+from datetime import datetime, timezone
 
 from app import config
 
@@ -35,8 +36,21 @@ def get_conn():
         conn.close()
 
 
+def now_iso():
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
 def init_db():
     config.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     config.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     with get_conn() as conn:
         conn.executescript(SCHEMA)
+
+
+def create_job(job_id, original_name, ext, input_path, size_bytes):
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT INTO jobs (id, original_name, ext, input_path, size_bytes, status, created_at) "
+            "VALUES (?, ?, ?, ?, ?, 'queued', ?)",
+            (job_id, original_name, ext, str(input_path), size_bytes, now_iso()),
+        )
