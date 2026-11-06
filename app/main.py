@@ -6,6 +6,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app import config, db
@@ -21,11 +22,21 @@ async def lifespan(app):
 
 
 app = FastAPI(lifespan=lifespan)
+app.mount("/static", StaticFiles(directory=config.STATIC_DIR), name="static")
 
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     return templates.TemplateResponse(request, "index.html", {})
+
+
+@app.get("/jobs", response_class=HTMLResponse)
+def list_jobs(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "_jobs.html",
+        {"jobs": db.list_jobs(), "poll_sec": config.POLL_INTERVAL_SEC},
+    )
 
 
 @app.post("/jobs")

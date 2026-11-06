@@ -47,6 +47,14 @@ def init_db():
         conn.executescript(SCHEMA)
 
 
+def list_jobs(limit=50):
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT * FROM jobs ORDER BY created_at DESC LIMIT ?", (limit,)
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+
 def create_job(job_id, original_name, ext, input_path, size_bytes):
     with get_conn() as conn:
         conn.execute(

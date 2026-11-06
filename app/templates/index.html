@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>Upscaling Video</title>
+  <script src="/static/htmx.min.js"></script>
 </head>
 <body>
   <h1>Upscaling Video</h1>
@@ -15,5 +16,8 @@
       <button type="submit">Upload</button>
     </p>
   </form>
+
+  <h2>Daftar job</h2>
+  <div hx-get="/jobs" hx-trigger="load" hx-swap="outerHTML"></div>
 </body>
 </html>

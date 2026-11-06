@@ -1,0 +1,18 @@
+<div id="jobs" hx-get="/jobs" hx-trigger="every {{ poll_sec }}s" hx-swap="outerHTML">
+  <table border="1">
+    <tr>
+      <th>Nama</th>
+      <th>Status</th>
+      <th>Dibuat (UTC)</th>
+    </tr>
+    {% for job in jobs %}
+    <tr>
+      <td>{{ job.original_name }}</td>
+      <td>{{ job.status }}</td>
+      <td>{{ job.created_at }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3">Belum ada job.</td></tr>
+    {% endfor %}
+  </table>
+</div>

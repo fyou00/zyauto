@@ -6,13 +6,13 @@ Buktikan alur: upload video -> worker proses Topaz -> download hasil. Localhost,
 ## Status
 - [x] 1. Struktur proyek + config.py + db.py (tabel jobs)
 - [x] 2. Halaman upload + validasi file + simpan job (queued)
-- [ ] 3. Daftar job dengan HTMX polling
+- [x] 3. Daftar job dengan HTMX polling
 - [ ] 4. Worker: ambil job, mode FAKE_TOPAZ, ubah status
 - [ ] 5. Download hasil
 - [ ] 6. Recovery: job 'processing' kembali 'queued' saat worker start; timeout job
 - [ ] 7. Integrasi Topaz asli (isi TOPAZ_FFMPEG_PATH, TVAI_* env, TOPAZ_FILTER)
 
-Commit terakhir: feat: upload form dan validasi file
+Commit terakhir: feat: daftar job dengan polling htmx
 
 ## Keputusan
 - Stack: FastAPI + Jinja2 + HTMX, SQLite untuk jobs, tanpa Redis/Celery.
@@ -36,4 +36,5 @@ Commit terakhir: feat: upload form dan validasi file
 - Tes: init_db membuat tabel jobs + index, init_db idempoten, data/ dan .venv/ ter-ignore.
 - Langkah 2 selesai. Upload mp4 -> 303 + baris queued; txt -> 400; >500 MB -> 413 tanpa sisa file; nama disk UUID.
 - Keputusan: original_name disimpan apa adanya (Path().name, hanya untuk tampilan, di-escape Jinja). Sanitasi nama untuk unduhan dilakukan di langkah 5.
-- Belum: htmx.min.js (v2.0.11) sudah ada di app/static tapi belum di-commit; baru dipakai di langkah 3.
+- Langkah 3 selesai. HTMX 2.0.11 lokal di app/static/htmx.min.js (dari jsDelivr, bukan CDN saat runtime). GET /jobs di-poll tiap 3 detik (POLL_INTERVAL_SEC). Nama job di-escape Jinja.
+- Tes: /static/htmx.min.js 200; status diubah manual muncul di GET /jobs; tabel kosong menampilkan "Belum ada job."
