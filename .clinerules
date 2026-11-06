@@ -3,6 +3,9 @@ Prototype web upscaling video: user upload video -> worker jalankan Topaz -> use
 Stack: Python 3.11+, FastAPI, Jinja2, HTMX, SQLite (sqlite3 bawaan). Localhost, Dev di macOS, produksi di Windows.
 Status dan keputusan terkini ada di NOTES.md.
 
+# DO NOT
+- Jangan baca DONTREADME.md, itu hanya file catatanku.
+
 # Mulai tugas
 - Baca NOTES.md dulu sebelum mengerjakan apa pun.
 - Tugas non-trivial: ajukan rencana singkat dulu, tunggu persetujuan.
