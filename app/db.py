@@ -55,6 +55,53 @@ def list_jobs(limit=50):
         return [dict(r) for r in rows]
 
 
+def claim_next_job():
+    """Ambil satu job queued (tertua) dan ubah jadi processing secara atomic."""
+    conn = sqlite3.connect(config.DB_PATH, timeout=10, isolation_level=None)
+    conn.row_factory = sqlite3.Row
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT * FROM jobs WHERE status = 'queued' ORDER BY created_at LIMIT 1"
+        ).fetchone()
+        if row is None:
+            conn.execute("COMMIT")
+            return None
+        cur = conn.execute(
+            "UPDATE jobs SET status = 'processing', attempts = attempts + 1, started_at = ? "
+            "WHERE id = ? AND status = 'queued'",
+            (now_iso(), row["id"]),
+        )
+        if cur.rowcount != 1:
+            conn.execute("ROLLBACK")
+            return None
+        conn.execute("COMMIT")
+        job = dict(row)
+        job["attempts"] += 1
+        return job
+    except Exception:
+        conn.execute("ROLLBACK")
+        raise
+    finally:
+        conn.close()
+
+
+def mark_done(job_id, output_path):
+    with get_conn() as conn:
+        conn.execute(
+            "UPDATE jobs SET status = 'done', output_path = ?, finished_at = ?, error = NULL WHERE id = ?",
+            (str(output_path), now_iso(), job_id),
+        )
+
+
+def mark_failed(job_id, error):
+    with get_conn() as conn:
+        conn.execute(
+            "UPDATE jobs SET status = 'failed', error = ?, finished_at = ? WHERE id = ?",
+            (error, now_iso(), job_id),
+        )
+
+
 def create_job(job_id, original_name, ext, input_path, size_bytes):
     with get_conn() as conn:
         conn.execute(

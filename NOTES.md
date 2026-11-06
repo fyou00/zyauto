@@ -7,7 +7,7 @@ Buktikan alur: upload video -> worker proses Topaz -> download hasil. Localhost,
 - [x] 1. Struktur proyek + config.py + db.py (tabel jobs)
 - [x] 2. Halaman upload + validasi file + simpan job (queued)
 - [x] 3. Daftar job dengan HTMX polling
-- [ ] 4. Worker: ambil job, mode FAKE_TOPAZ, ubah status
+- [x] 4. Worker: ambil job, mode FAKE_TOPAZ, ubah status
 - [ ] 5. Download hasil
 - [ ] 6. Recovery: job 'processing' kembali 'queued' saat worker start; timeout job
 - [ ] 7. Integrasi Topaz asli (isi TOPAZ_FFMPEG_PATH, TVAI_* env, TOPAZ_FILTER)
@@ -38,3 +38,5 @@ Commit terakhir: feat: daftar job dengan polling htmx
 - Keputusan: original_name disimpan apa adanya (Path().name, hanya untuk tampilan, di-escape Jinja). Sanitasi nama untuk unduhan dilakukan di langkah 5.
 - Langkah 3 selesai. HTMX 2.0.11 lokal di app/static/htmx.min.js (dari jsDelivr, bukan CDN saat runtime). GET /jobs di-poll tiap 3 detik (POLL_INTERVAL_SEC). Nama job di-escape Jinja.
 - Tes: /static/htmx.min.js 200; status diubah manual muncul di GET /jobs; tabel kosong menampilkan "Belum ada job."
+- Langkah 4 selesai. Worker satu proses, claim atomic (BEGIN IMMEDIATE), ambil job queued tertua. Tes: FAKE dua job berurutan -> done + cmp sama; tanpa FAKE -> failed "Topaz belum dikonfigurasi"; input hilang -> failed dengan pesan singkat (stderr hanya ke log worker, bukan ke DB/UI); worker tetap hidup.
+- Keputusan: error tak terduga di worker ditangkap sebagai failed (pesan "error tak terduga: <tipe>"), supaya worker tidak mati dan job tidak tertinggal di processing.
