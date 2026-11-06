@@ -4,7 +4,7 @@
 Buktikan alur: upload video -> worker proses Topaz -> download hasil. Localhost, tanpa login, tanpa CSS.
 
 ## Status
-- [ ] 1. Struktur proyek + config.py + db.py (tabel jobs)
+- [x] 1. Struktur proyek + config.py + db.py (tabel jobs)
 - [ ] 2. Halaman upload + validasi file + simpan job (queued)
 - [ ] 3. Daftar job dengan HTMX polling
 - [ ] 4. Worker: ambil job, mode FAKE_TOPAZ, ubah status
@@ -12,7 +12,7 @@ Buktikan alur: upload video -> worker proses Topaz -> download hasil. Localhost,
 - [ ] 6. Recovery: job 'processing' kembali 'queued' saat worker start; timeout job
 - [ ] 7. Integrasi Topaz asli (isi TOPAZ_FFMPEG_PATH, TVAI_* env, TOPAZ_FILTER)
 
-Commit terakhir: (belum ada)
+Commit terakhir: feat: struktur proyek, config, dan skema tabel jobs
 
 ## Keputusan
 - Stack: FastAPI + Jinja2 + HTMX, SQLite untuk jobs, tanpa Redis/Celery.
@@ -32,3 +32,5 @@ Commit terakhir: (belum ada)
 
 ## Catatan sesi
 (agent menambah ringkasan singkat di sini setelah tiap tugas)
+- Langkah 1 selesai. Python 3.11.18 di /usr/local/bin/python3.11, venv di .venv. Tabel jobs punya kolom attempts. Rencana lengkap di PLAN.md.
+- Tes: init_db membuat tabel jobs + index, init_db idempoten, data/ dan .venv/ ter-ignore.
