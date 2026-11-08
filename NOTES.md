@@ -45,6 +45,35 @@ Commit terakhir: feat: worker pipeline bertahap topaz -> ae -> encoding dengan F
 - Tes tambahan (`/tmp/test_langkah4_extra.py`, tidak ikut commit): config HandBrake kosong -> pesan jelas; preset non-NVENC ditolak; preset NVENC lolos dan argumen CLI benar; timeout AE membunuh proses anak; topaz_only tidak melewati AE/encoding. 8/8 lulus.
 - Belum dites: AE asli (aerender) dan HandBrakeCLI asli di Windows. Input hasil Topaz ke comp (BELUM DIPUTUSKAN).
 
+## Hasil tes (Mac, FAKE)
+Semua tes memakai DB dan folder sementara di /tmp. DB asli tidak disentuh.
+
+### Antrian worker (tests_queue.py)
+- Skenario A (order 1 topaz_cc, order 2 topaz_only, sukses): LULUS.
+  - Job 2 baru processing setelah job 1 done. Log job 1 berurutan: topaz -> ae -> encoding -> done.
+  - Tidak ada file perantara tersisa. Output kedua job identik dengan input.
+- Skenario B (AE job 1 gagal, FAKE_AE_FAIL=1): LULUS.
+  - Job 1 failed dan tahap encoding tidak dimulai. Job 2 tetap jalan sampai done.
+  - Tidak ada file perantara tersisa.
+
+### Validasi form dan route HTTP (langkah 3)
+- Tanpa service, service tidak dikenal, topaz_cc tanpa preset, preset palsu, file txt: 400 dengan pesan sesuai.
+- topaz_only dan topaz_cc valid: 303. Tidak ada file yatim di data/uploads.
+- Fragmen /ui/cc-presets: topaz_only dan tanpa service kosong. topaz_cc menampilkan dropdown, label ter-escape.
+- Halaman utama tanpa radio terpilih dan tanpa tag style.
+
+### Encoding HandBrake (langkah 4, tes tambahan 8/8 lulus)
+- Config kosong: pesan menyebut HANDBRAKE_CLI_PATH, HANDBRAKE_PRESET_FILE, HANDBRAKE_PRESET_NAME.
+- Preset non-NVENC ditolak.
+- Preset NVENC lolos, argumen CLI benar, tahap encoding sukses.
+- topaz_only tidak melewati AE atau encoding.
+
+### Timeout proses (proc.run_real)
+- Timeout tahap AE melapor AE: timeout setelah N detik, dan proses anak ikut mati.
+- Bug ditemukan saat tes: subprocess.run(timeout=) tidak membunuh anak. Sekarang jalur FAKE juga lewat run_real.
+
+Belum dites: AE asli (aerender), HandBrakeCLI asli, NVENC di Windows.
+
 ## Konteks
 - PC: i5-4690, 16 GB DDR3, GTX 1070 Ti. Server dan worker satu mesin.
 - Target nyata: video rata-rata 30 detik 1080p, proses Topaz sekitar 5-8 menit.
