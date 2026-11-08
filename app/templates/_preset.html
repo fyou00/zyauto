@@ -1,0 +1,16 @@
+{% if service == 'topaz_cc' %}
+<p>
+  {% if presets %}
+  <label>Preset CC:
+    <select name="cc_preset" required>
+      <option value="" disabled selected>-- pilih preset --</option>
+      {% for p in presets %}
+      <option value="{{ p.id }}">{{ p.label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  {% else %}
+  Belum ada preset CC (isi CC_PRESETS di app/config.py).
+  {% endif %}
+</p>
+{% endif %}

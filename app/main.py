@@ -5,7 +5,7 @@ import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -59,12 +59,44 @@ def download_job(job_id: str):
     )
 
 
+@app.get("/ui/cc-presets", response_class=HTMLResponse)
+def cc_preset_field(request: Request, service: str = ""):
+    """Fragment HTMX: dropdown preset hanya untuk topaz_cc."""
+    return templates.TemplateResponse(
+        request,
+        "_preset.html",
+        {"service": service, "presets": config.CC_PRESETS},
+    )
+
+
+def validate_service(service: str, cc_preset: str):
+    """Validasi di server (wajib, form bisa dikirim dengan nilai apa pun).
+
+    Mengembalikan cc_preset yang valid, atau None untuk topaz_only.
+    """
+    if service not in config.SERVICES:
+        raise HTTPException(400, "Pilih layanan (topaz_only atau topaz_cc)")
+    if service == "topaz_only":
+        return None
+    if not cc_preset:
+        raise HTTPException(400, "Pilih preset CC untuk layanan topaz_cc")
+    if cc_preset not in {p["id"] for p in config.CC_PRESETS}:
+        raise HTTPException(400, "Preset tidak dikenal")
+    return cc_preset
+
+
 @app.post("/jobs")
-async def create_job(file: UploadFile = File(...)):
+async def create_job(
+    file: UploadFile = File(...),
+    service: str = Form(""),
+    cc_preset: str = Form(""),
+):
     original_name = Path(file.filename or "").name
     ext = Path(original_name).suffix.lower().lstrip(".")
     if ext not in config.ALLOWED_EXTS:
         raise HTTPException(400, "Format harus mp4, mov, atau mkv")
+    # Validasi layanan dan preset sebelum file disimpan, supaya tidak ada file yatim
+    cc_preset = validate_service(service, cc_preset)
 
     job_id = str(uuid.uuid4())
     input_path = config.UPLOAD_DIR / f"{job_id}.{ext}"
@@ -82,5 +114,5 @@ async def create_job(file: UploadFile = File(...)):
         if not saved:
             input_path.unlink(missing_ok=True)
 
-    db.create_job(job_id, original_name, ext, input_path, size)
+    db.create_job(job_id, original_name, ext, input_path, size, service, cc_preset)
     return RedirectResponse("/", status_code=303)

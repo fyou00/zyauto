@@ -3,6 +3,8 @@
     <tr>
       <th>Nama</th>
       <th>Status</th>
+      <th>Layanan</th>
+      <th>Tahap</th>
       <th>Dibuat (UTC)</th>
       <th>Hasil</th>
     </tr>
@@ -10,11 +12,13 @@
     <tr>
       <td>{{ job.original_name }}</td>
       <td>{{ job.status }}</td>
+      <td>{{ job.service }}</td>
+      <td>{{ job.stage or '-' }}</td>
       <td>{{ job.created_at }}</td>
       <td>{% if job.status == 'done' and job.output_path %}<a href="/jobs/{{ job.id }}/download">Download</a>{% endif %}</td>
     </tr>
     {% else %}
-    <tr><td colspan="4">Belum ada job.</td></tr>
+    <tr><td colspan="6">Belum ada job.</td></tr>
     {% endfor %}
   </table>
 </div>

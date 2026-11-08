@@ -12,6 +12,18 @@
     <p>
       <label>Video (mp4, mov, mkv): <input type="file" name="file" accept=".mp4,.mov,.mkv" required></label>
     </p>
+    <p>Layanan:</p>
+    <p>
+      <label><input type="radio" name="service" value="topaz_only" required
+        hx-get="/ui/cc-presets" hx-vals='{"service": "topaz_only"}' hx-target="#preset-area" hx-trigger="change">
+        topaz_only (enhancement saja)</label>
+    </p>
+    <p>
+      <label><input type="radio" name="service" value="topaz_cc"
+        hx-get="/ui/cc-presets" hx-vals='{"service": "topaz_cc"}' hx-target="#preset-area" hx-trigger="change">
+        topaz_cc (enhancement + color correction)</label>
+    </p>
+    <div id="preset-area"></div>
     <p>
       <button type="submit">Upload</button>
     </p>

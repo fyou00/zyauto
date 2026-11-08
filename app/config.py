@@ -42,9 +42,10 @@ FAKE_TOPAZ_DELAY_SEC = 5
 # Layanan yang tersedia. topaz_cc butuh preset CC.
 SERVICES = ("topaz_only", "topaz_cc")
 
-# Daftar preset CC diisi user di .env, dipisah koma (contoh: CC_PRESETS=preset_a,preset_b).
-# JANGAN diisi tebakan di sini: nama preset ditentukan user.
-CC_PRESETS = [p.strip() for p in os.environ.get("CC_PRESETS", "").split(",") if p.strip()]
+# Preset CC. id stabil (dipakai di DB dan form), label untuk UI, aep_path = template .aep (satu per preset).
+# Nama dan file .aep diisi user. JANGAN diisi tebakan di sini. Kosong = topaz_cc belum bisa dipilih.
+# Contoh isi: {"id": "soft_fresh", "label": "CC Soft Fresh", "aep_path": BASE_DIR / "presets" / "soft_fresh.aep"}
+CC_PRESETS = []
 
 # Mode FAKE AE: tahap AE menyalin file saja (untuk tes di macOS tanpa After Effects)
 FAKE_AE_DELAY_SEC = 5

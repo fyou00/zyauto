@@ -12,11 +12,11 @@ Tujuannya untuk enchancement video dengan resolusi asli (original). Buktikan alu
 - [x] 6. Recovery: job 'processing' kembali 'queued' saat worker start; timeout job
 - [ ] 7. Integrasi Topaz asli (enhancement, tanpa upscaling). Kode selesai; tes Topaz asli di Windows: PENDING (user)
 
-Commit terakhir: feat: kolom service, cc_preset, stage, intermediate_path dan migrasi db
+Commit terakhir: feat: form pilih layanan, dropdown preset CC, kolom layanan dan tahap
 
 ## Layanan AE (rencana lengkap di PLAN.md, bagian "Layanan AE")
 - [x] 2. DB: kolom service, cc_preset, stage, intermediate_path + migrasi
-- [ ] 3. UI: radio layanan, dropdown preset CC, kolom Layanan dan Tahap
+- [x] 3. UI: radio layanan, dropdown preset CC, kolom Layanan dan Tahap
 - [ ] 4. Worker bertahap topaz -> ae -> encode, FAKE_AE, tes aturan antrian
 
 ## Keputusan
@@ -27,6 +27,9 @@ Commit terakhir: feat: kolom service, cc_preset, stage, intermediate_path dan mi
 - Di luar prototype: login, kuota, payment, CSS. (After Effects sekarang masuk lewat bagian "Layanan AE"; .clinerules sudah diperbarui sesuai keputusan user.)
 - Encoding akhir topaz_cc: AE render ke .mov (QuickTime), lalu HandBrakeCLI encode ke .mp4 dengan preset NVENC dari presets/. Bukan ffmpeg. topaz_only tidak di-encode ulang.
 - Preset CC: id stabil + label UI + path .aep, di config.py. Dropdown hanya tampilan; server tetap memvalidasi id.
+- Langkah 3: radio layanan wajib (atribut `required`, tanpa default terpilih). Dropdown preset diisi HTMX lewat GET /ui/cc-presets?service=... (tanpa JS inline). Daftar preset berasal dari config.CC_PRESETS, template hanya loop.
+- Validasi server di `validate_service()`: service kosong/tidak dikenal -> 400 "Pilih layanan (topaz_only atau topaz_cc)"; topaz_cc tanpa preset -> 400 "Pilih preset CC untuk layanan topaz_cc"; id preset tidak ada di config -> 400 "Preset tidak dikenal"; topaz_only mengabaikan cc_preset (disimpan NULL). Validasi dijalankan SEBELUM file disimpan, supaya tidak ada file yatim di data/uploads.
+- Kolom tabel: Layanan dan Tahap (stage ditampilkan "-" jika NULL). CC_PRESETS tidak lagi dibaca dari .env.
 - Layanan: topaz_only dan topaz_cc. Satu order = satu job. Worker memproses satu job penuh (termasuk seluruh tahap AE) sebelum job berikutnya; AE gagal -> job failed, job berikutnya lanjut.
 - Skema (langkah 2): kolom baru service (default 'topaz_only', CHECK), cc_preset, stage (CHECK topaz|ae|encoding atau NULL), intermediate_path. Migrasi lewat ALTER TABLE ADD COLUMN di init_db(), dilewati jika kolom sudah ada; baris lama terbaca sebagai topaz_only.
 - Daftar preset CC dibaca dari CC_PRESETS di .env (dipisah koma), default kosong. Nama preset belum diputuskan user, tidak diisi tebakan.
@@ -41,9 +44,9 @@ Commit terakhir: feat: kolom service, cc_preset, stage, intermediate_path dan mi
 - Nilai TOPAZ_FILTER dan TVAI_* di .env belum diisi user (kode siap, tes asli menunggu Windows).
 - Dukungan GTX 1070 Ti di versi Topaz yang dipakai belum dites.
 - Waktu proses After Effects belum diukur.
-- Daftar preset CC awal (id, label, file .aep) belum diisi user. Struktur sudah diputuskan, lihat PLAN.md bagian "Revisi keputusan".
+- Daftar preset CC awal (id, label, file .aep) belum diisi user: `CC_PRESETS` di app/config.py masih kosong. Selama kosong, topaz_cc ditolak "Preset tidak dikenal" dan UI menampilkan "Belum ada preset CC".
 - Preset HandBrake (presets/*.json, nama preset, encoder NVENC) belum ada. Dibutuhkan untuk tes asli di Windows (langkah 4).
-- Toggle dropdown preset: rencana HTMX murni (route fragment), menunggu konfirmasi (langkah 3).
+- Toggle dropdown preset: selesai (HTMX murni, GET /ui/cc-presets), tidak ada pertanyaan terbuka.
 - AE_AERENDER_PATH dan AE_PROJECT_PATH di .env belum diisi (langkah 4, tes asli di Windows).
 - Tes asli HandBrakeCLI dan NVENC belum dilakukan (menunggu Windows).
 
