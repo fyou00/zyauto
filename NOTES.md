@@ -24,7 +24,9 @@ Commit terakhir: feat: kolom service, cc_preset, stage, intermediate_path dan mi
 - Satu worker, satu job sekali jalan (hanya 1 GPU).
 - Status job: queued -> processing -> done / failed.
 - Format upload: mp4, mov, mkv. Batas ukuran di config.py (default 500 MB).
-- Di luar prototype: login, kuota, payment, CSS. (After Effects sekarang masuk lewat bagian "Layanan AE"; .clinerules belum diperbarui, menunggu izin user.)
+- Di luar prototype: login, kuota, payment, CSS. (After Effects sekarang masuk lewat bagian "Layanan AE"; .clinerules sudah diperbarui sesuai keputusan user.)
+- Encoding akhir topaz_cc: AE render ke .mov (QuickTime), lalu HandBrakeCLI encode ke .mp4 dengan preset NVENC dari presets/. Bukan ffmpeg. topaz_only tidak di-encode ulang.
+- Preset CC: id stabil + label UI + path .aep, di config.py. Dropdown hanya tampilan; server tetap memvalidasi id.
 - Layanan: topaz_only dan topaz_cc. Satu order = satu job. Worker memproses satu job penuh (termasuk seluruh tahap AE) sebelum job berikutnya; AE gagal -> job failed, job berikutnya lanjut.
 - Skema (langkah 2): kolom baru service (default 'topaz_only', CHECK), cc_preset, stage (CHECK topaz|ae|encoding atau NULL), intermediate_path. Migrasi lewat ALTER TABLE ADD COLUMN di init_db(), dilewati jika kolom sudah ada; baris lama terbaca sebagai topaz_only.
 - Daftar preset CC dibaca dari CC_PRESETS di .env (dipisah koma), default kosong. Nama preset belum diputuskan user, tidak diisi tebakan.
@@ -39,11 +41,11 @@ Commit terakhir: feat: kolom service, cc_preset, stage, intermediate_path dan mi
 - Nilai TOPAZ_FILTER dan TVAI_* di .env belum diisi user (kode siap, tes asli menunggu Windows).
 - Dukungan GTX 1070 Ti di versi Topaz yang dipakai belum dites.
 - Waktu proses After Effects belum diukur.
-- Nama dan daftar preset CC (CC_PRESETS) belum diisi user. Nama atau file .aep/.ffx?
-- Apakah ada encode ulang setelah AE, atau output AE langsung final? Menentukan isi tahap 'encoding' (langkah 4).
+- Daftar preset CC awal (id, label, file .aep) belum diisi user. Struktur sudah diputuskan, lihat PLAN.md bagian "Revisi keputusan".
+- Preset HandBrake (presets/*.json, nama preset, encoder NVENC) belum ada. Dibutuhkan untuk tes asli di Windows (langkah 4).
 - Toggle dropdown preset: rencana HTMX murni (route fragment), menunggu konfirmasi (langkah 3).
 - AE_AERENDER_PATH dan AE_PROJECT_PATH di .env belum diisi (langkah 4, tes asli di Windows).
-- .clinerules masih menyebut After Effects di luar batasan prototype; perlu izin user untuk diperbarui.
+- Tes asli HandBrakeCLI dan NVENC belum dilakukan (menunggu Windows).
 
 ## Catatan sesi
 (agent menambah ringkasan singkat di sini setelah tiap tugas)

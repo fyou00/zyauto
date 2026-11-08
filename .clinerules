@@ -20,7 +20,8 @@ Status dan keputusan terkini ada di NOTES.md.
 
 # Batasan prototype (jangan dilanggar)
 - TANPA CSS (tidak ada <style>, tidak ada file css). HTML polos.
-- TANPA login, kuota, payment, After Effects.
+- TANPA login, kuota, payment.
+- After Effects hanya untuk layanan topaz_cc, dan wajib FAKE_AE=1 saat dev di Mac.
 - Tanpa library tambahan selain yang di daftar install. Tanya dulu kalau butuh.
 - HTMX sebagai file lokal di app/static/htmx.min.js, bukan CDN.
 - Semua path dan setting di app/config.py. Tidak hardcode di tempat lain.

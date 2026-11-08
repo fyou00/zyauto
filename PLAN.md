@@ -157,3 +157,17 @@ Status: rencana disetujui, kode BELUM dikerjakan.
 - Langkah 2 -> 3 -> 4, satu commit per langkah, hanya setelah tes lulus.
 - Tidak ada git push, reset, rebase, atau clean.
 - NOTES.md diperbarui di akhir tiap langkah.
+
+## Revisi keputusan (disetujui user, menggantikan butir terkait di atas)
+- Preset CC dipisah jadi tiga bagian di config.py. `CC_PRESETS` berisi list dict: `id` (stabil, pola huruf kecil/angka/underscore, mis. soft_fresh), `label` (teks di UI, mis. "CC Soft Fresh"), `aep_path` (Path ke template .aep, satu .aep per preset untuk MVP). Nama di UI bisa diganti tanpa mengubah file.
+- Isi awal `CC_PRESETS` kosong. Nama preset dan file .aep belum diberikan user, tidak ada tebakan.
+- Validasi server tetap wajib: `cc_preset` harus berupa id yang ada di config. Dropdown hanya tampilan.
+- Alur topaz_cc: Topaz -> AE render ke QuickTime (.mov) -> HandBrakeCLI encode ke .mp4 -> done. Tahap encoding memakai HandBrakeCLI, bukan ffmpeg.
+- Setting encode: file preset HandBrake (.json) hasil export aplikasi HandBrake, disimpan di `presets/`. Worker memakai `--preset-import-file <file>` dan `-Z "<nama preset>"`. Preset wajib memakai encoder NVENC. Jika tidak, tahap encoding dianggap belum siap (job failed dengan pesan jelas).
+- Config baru (.env): HANDBRAKE_CLI_PATH, HANDBRAKE_PRESET_FILE, HANDBRAKE_PRESET_NAME. Jika kosong dan FAKE_AE=0, job failed dengan pesan "HandBrake belum dikonfigurasi, kosong: ..." (tanpa path lokal di pesan).
+- topaz_only tidak di-encode ulang. Hasil Topaz langsung jadi file download.
+- Timeout tahap HandBrake memakai kill_process_tree yang sama dengan tahap lain.
+- Mode fake: FAKE_HANDBRAKE=1 untuk tes di Mac, menyalin file dengan delay FAKE_HANDBRAKE_DELAY_SEC (baru di config.py).
+- FAKE_AE=1 wajib saat dev di Mac (aturan baru di .clinerules).
+- HandBrakeCLI adalah binary eksternal, bukan library Python. Tidak masuk requirements.txt.
+- Dampak ke langkah: langkah 3 hanya menyesuaikan dropdown ke id dan label. Langkah 4 menambah `app/handbrake.py` (pola sama dengan topaz.py dan ae.py) dan `app/fake_handbrake.py`. Tahap `encoding` di DB berarti HandBrake.
