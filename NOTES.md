@@ -80,7 +80,7 @@ Belum dites: AE asli (aerender), HandBrakeCLI asli, NVENC di Windows.
 
 ## Masalah terbuka
 - Waktu proses After Effects belum diukur.
-- Daftar preset CC awal (id, label, file .aep) belum diisi user: `CC_PRESETS` di app/config.py masih kosong. Selama kosong, topaz_cc ditolak "Preset tidak dikenal" dan UI menampilkan "Belum ada preset CC".
+- `CC_PRESETS` di app/config.py berisi 5 preset UJI untuk FAKE_AE (soft_fresh, dream_glow, blue_beats, warm_pop, punchy_contrast). Dua terakhir dipilih bebas atas izin user. Nama final dan file .aep (presets/*.aep, belum ada) menunggu user. FAKE_AE tidak membaca aep_path.
 - Preset HandBrake (presets/*.json, nama preset, encoder NVENC) belum ada. Dibutuhkan untuk tes asli di Windows (langkah 4).
 - Toggle dropdown preset: selesai (HTMX murni, GET /ui/cc-presets), tidak ada pertanyaan terbuka.
 - AE_AERENDER_PATH dan AE_PROJECT_PATH di .env belum diisi (langkah 4, tes asli di Windows).

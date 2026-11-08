@@ -17,10 +17,10 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
 PRESET_ID = "uji_cc"
-# Preset uji hanya hidup di salinan sementara, bukan di app/config.py repo
+# Preset uji ditambahkan di AKHIR salinan config.py (menimpa CC_PRESETS repo), bukan di config repo
 CC_PRESETS_LINE = (
-    'CC_PRESETS = [{"id": "' + PRESET_ID + '", "label": "CC Uji", '
-    '"aep_path": BASE_DIR / "presets" / "uji.aep"}]'
+    '\n# override untuk tes\nCC_PRESETS = [{"id": "' + PRESET_ID + '", "label": "CC Uji", '
+    '"aep_path": BASE_DIR / "presets" / "uji.aep"}]\n'
 )
 
 
@@ -34,8 +34,7 @@ def build_copy(tmp):
                     ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
     cfg = tmp / "app" / "config.py"
     text = cfg.read_text(encoding="utf-8")
-    assert "CC_PRESETS = []" in text, "penanda CC_PRESETS tidak ditemukan di config.py"
-    cfg.write_text(text.replace("CC_PRESETS = []", CC_PRESETS_LINE, 1), encoding="utf-8")
+    cfg.write_text(text + CC_PRESETS_LINE, encoding="utf-8")
 
 
 def insert_jobs(tmp, jobs):
