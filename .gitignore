@@ -8,3 +8,5 @@ data/
 *.mov
 *.mkv
 .env
+DONTREADME.md
+.DS_Store
