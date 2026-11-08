@@ -47,13 +47,27 @@ SERVICES = ("topaz_only", "topaz_cc")
 # Contoh isi: {"id": "soft_fresh", "label": "CC Soft Fresh", "aep_path": BASE_DIR / "presets" / "soft_fresh.aep"}
 CC_PRESETS = []
 
-# Mode FAKE AE: tahap AE menyalin file saja (untuk tes di macOS tanpa After Effects)
-FAKE_AE_DELAY_SEC = 5
 
-# After Effects asli (langkah 4). Nilai diisi user di .env (lihat .env.example).
-# JANGAN diisi tebakan di sini.
+def get_cc_preset(preset_id):
+    """Mengembalikan dict preset dengan id tersebut, atau None."""
+    for preset in CC_PRESETS:
+        if preset["id"] == preset_id:
+            return preset
+    return None
+
+# Mode FAKE AE dan HandBrake: tahap menyalin file saja (tes di macOS). Delay dibaca dari .env.
+FAKE_AE_DELAY_SEC = float(os.environ.get("FAKE_AE_DELAY_SEC", "5"))
+FAKE_HANDBRAKE_DELAY_SEC = float(os.environ.get("FAKE_HANDBRAKE_DELAY_SEC", "5"))
+
+# After Effects asli. Nilai diisi user di .env (lihat .env.example). JANGAN diisi tebakan di sini.
 AE_AERENDER_PATH = os.environ.get("AE_AERENDER_PATH", "")  # path aerender.exe
-AE_PROJECT_PATH = os.environ.get("AE_PROJECT_PATH", "")    # path project .aep yang dipakai aerender
+AE_COMP_NAME = os.environ.get("AE_COMP_NAME", "")          # nama comp di template .aep
+AE_OM_TEMPLATE = os.environ.get("AE_OM_TEMPLATE", "")      # nama output module QuickTime
+
+# HandBrakeCLI (tahap encoding topaz_cc). Nilai diisi user di .env.
+HANDBRAKE_CLI_PATH = os.environ.get("HANDBRAKE_CLI_PATH", "")
+HANDBRAKE_PRESET_FILE = os.environ.get("HANDBRAKE_PRESET_FILE", "")  # file .json export HandBrake (NVENC)
+HANDBRAKE_PRESET_NAME = os.environ.get("HANDBRAKE_PRESET_NAME", "")
 
 # Topaz asli (langkah 7). Nilai diisi user di .env (lihat .env.example). JANGAN diisi tebakan di sini.
 TOPAZ_FFMPEG_PATH = os.environ.get("TOPAZ_FFMPEG_PATH", "")  # path ffmpeg dari Topaz Video AI

@@ -171,3 +171,15 @@ Status: rencana disetujui, kode BELUM dikerjakan.
 - FAKE_AE=1 wajib saat dev di Mac (aturan baru di .clinerules).
 - HandBrakeCLI adalah binary eksternal, bukan library Python. Tidak masuk requirements.txt.
 - Dampak ke langkah: langkah 3 hanya menyesuaikan dropdown ke id dan label. Langkah 4 menambah `app/handbrake.py` (pola sama dengan topaz.py dan ae.py) dan `app/fake_handbrake.py`. Tahap `encoding` di DB berarti HandBrake.
+
+## Langkah 1 - (placeholder, kosong)
+Belum diisi. Akan ditulis setelah keputusan user. Tes: Windows langsung (AE asli).
+
+## Langkah 5 - (placeholder, kosong)
+Belum diisi. Akan ditulis setelah keputusan user. Tes: Windows langsung (AE asli).
+
+## Langkah 6 - (placeholder, kosong)
+Belum diisi. Akan ditulis setelah keputusan user. Tes: Windows langsung (AE asli).
+
+## Langkah 7 - (placeholder, kosong)
+Belum diisi. Akan ditulis setelah keputusan user. Tes: Windows langsung (AE asli).

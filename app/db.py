@@ -79,7 +79,7 @@ def claim_next_job():
     try:
         conn.execute("BEGIN IMMEDIATE")
         row = conn.execute(
-            "SELECT * FROM jobs WHERE status = 'queued' ORDER BY created_at LIMIT 1"
+            "SELECT * FROM jobs WHERE status = 'queued' ORDER BY created_at, rowid LIMIT 1"
         ).fetchone()
         if row is None:
             conn.execute("COMMIT")
@@ -110,12 +110,12 @@ def reset_processing_jobs():
     """
     with get_conn() as conn:
         requeued = conn.execute(
-            "UPDATE jobs SET status = 'queued', started_at = NULL "
+            "UPDATE jobs SET status = 'queued', started_at = NULL, stage = NULL "
             "WHERE status = 'processing' AND attempts < ?",
             (config.MAX_ATTEMPTS,),
         ).rowcount
         failed = conn.execute(
-            "UPDATE jobs SET status = 'failed', error = ?, finished_at = ? "
+            "UPDATE jobs SET status = 'failed', error = ?, finished_at = ?, stage = NULL "
             "WHERE status = 'processing' AND attempts >= ?",
             ("gagal setelah percobaan maksimal (worker terhenti)", now_iso(), config.MAX_ATTEMPTS),
         ).rowcount
@@ -125,7 +125,7 @@ def reset_processing_jobs():
 def mark_done(job_id, output_path):
     with get_conn() as conn:
         conn.execute(
-            "UPDATE jobs SET status = 'done', output_path = ?, finished_at = ?, error = NULL WHERE id = ?",
+            "UPDATE jobs SET status = 'done', output_path = ?, finished_at = ?, error = NULL, stage = NULL WHERE id = ?",
             (str(output_path), now_iso(), job_id),
         )
 
@@ -133,7 +133,7 @@ def mark_done(job_id, output_path):
 def mark_failed(job_id, error):
     with get_conn() as conn:
         conn.execute(
-            "UPDATE jobs SET status = 'failed', error = ?, finished_at = ? WHERE id = ?",
+            "UPDATE jobs SET status = 'failed', error = ?, finished_at = ?, stage = NULL WHERE id = ?",
             (error, now_iso(), job_id),
         )
 

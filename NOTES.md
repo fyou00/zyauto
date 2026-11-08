@@ -10,14 +10,15 @@ Tujuannya untuk enchancement video dengan resolusi asli (original). Buktikan alu
 - [x] 4. Worker: ambil job, mode FAKE_TOPAZ, ubah status
 - [x] 5. Download hasil
 - [x] 6. Recovery: job 'processing' kembali 'queued' saat worker start; timeout job
-- [ ] 7. Integrasi Topaz asli (enhancement, tanpa upscaling). Kode selesai; tes Topaz asli di Windows: PENDING (user)
+- [x] 7. Integrasi Topaz asli (enhancement, tanpa upscaling). Kode selesai; tes Topaz asli di Windows: PENDING (user)
 
-Commit terakhir: feat: form pilih layanan, dropdown preset CC, kolom layanan dan tahap
+Commit terakhir: feat: worker pipeline bertahap topaz -> ae -> encoding dengan FAKE_AE dan HandBrake
 
 ## Layanan AE (rencana lengkap di PLAN.md, bagian "Layanan AE")
 - [x] 2. DB: kolom service, cc_preset, stage, intermediate_path + migrasi
 - [x] 3. UI: radio layanan, dropdown preset CC, kolom Layanan dan Tahap
-- [ ] 4. Worker bertahap topaz -> ae -> encode, FAKE_AE, tes aturan antrian
+- [x] 4. Worker bertahap topaz -> ae -> encode, FAKE_AE, tes aturan antrian
+- [ ] 1, 5, 6, 7: placeholder kosong di PLAN.md (tes AE asli di Windows)
 
 ## Keputusan
 - Stack: FastAPI + Jinja2 + HTMX, SQLite untuk jobs, tanpa Redis/Celery.
@@ -35,14 +36,20 @@ Commit terakhir: feat: form pilih layanan, dropdown preset CC, kolom layanan dan
 - Daftar preset CC dibaca dari CC_PRESETS di .env (dipisah koma), default kosong. Nama preset belum diputuskan user, tidak diisi tebakan.
 - Tanpa pilihan layanan: ditolak (400), tidak ada default di server. Berlaku saat UI/route dikerjakan di langkah 3.
 - File perantara disimpan di data/intermediates (INTERMEDIATE_DIR), dihapus saat job selesai atau gagal (langkah 4).
+- Langkah 4 selesai (tes Mac, FAKE). Urutan tahap di log berstempel waktu: topaz -> ae -> encoding -> done. Job 2 baru processing setelah job 1 done/failed (`tests_queue.py`, skenario A dan B lulus).
+- Keputusan: tahap AE asli SENGAJA berhenti dengan pesan "AE asli belum siap" sampai cara input hasil Topaz masuk ke comp diputuskan. Tanpa itu aerender bisa merender footage bawaan template dan hasilnya salah diam-diam.
+- Keputusan: jalur FAKE Topaz/AE/HandBrake juga lewat `proc.run_real` (timeout membunuh seluruh pohon proses). Ditemukan saat tes: `subprocess.run(timeout=)` tidak membunuh anak proses.
+- Keputusan: topaz_cc keluar sebagai `<job_id>.mp4` (dari HandBrake). topaz_only tetap ext asli. Nama unduhan mengikuti ext file.
+- Keputusan: `FAKE_AE_FAIL=1` (di fake_ae.py) dipakai khusus tes antrian skenario B.
+- Keputusan: `FAKE_AE` dan `FAKE_HANDBRAKE` WAJIB ada saat dev di Mac (aturan .clinerules). Di Windows dikosongkan.
+- Tes tambahan (`/tmp/test_langkah4_extra.py`, tidak ikut commit): config HandBrake kosong -> pesan jelas; preset non-NVENC ditolak; preset NVENC lolos dan argumen CLI benar; timeout AE membunuh proses anak; topaz_only tidak melewati AE/encoding. 8/8 lulus.
+- Belum dites: AE asli (aerender) dan HandBrakeCLI asli di Windows. Input hasil Topaz ke comp (BELUM DIPUTUSKAN).
 
 ## Konteks
 - PC: i5-4690, 16 GB DDR3, GTX 1070 Ti. Server dan worker satu mesin.
 - Target nyata: video rata-rata 30 detik 1080p, proses Topaz sekitar 5-8 menit.
 
 ## Masalah terbuka
-- Nilai TOPAZ_FILTER dan TVAI_* di .env belum diisi user (kode siap, tes asli menunggu Windows).
-- Dukungan GTX 1070 Ti di versi Topaz yang dipakai belum dites.
 - Waktu proses After Effects belum diukur.
 - Daftar preset CC awal (id, label, file .aep) belum diisi user: `CC_PRESETS` di app/config.py masih kosong. Selama kosong, topaz_cc ditolak "Preset tidak dikenal" dan UI menampilkan "Belum ada preset CC".
 - Preset HandBrake (presets/*.json, nama preset, encoder NVENC) belum ada. Dibutuhkan untuk tes asli di Windows (langkah 4).

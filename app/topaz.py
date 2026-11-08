@@ -4,15 +4,15 @@ Mode asli memanggil ffmpeg Topaz (config.TOPAZ_*), dengan batas waktu yang memat
 """
 
 import os
-import signal
 import subprocess
 import sys
 from pathlib import Path
 
 from app import config
+from app.proc import ToolError, run_real, run_with_timeout
 
 
-class TopazError(Exception):
+class TopazError(ToolError):
     pass
 
 
@@ -33,17 +33,7 @@ def run_upscale(input_path: Path, output_path: Path, timeout_sec: int):
         str(output_path),
         str(config.FAKE_TOPAZ_DELAY_SEC),
     ]
-    try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_sec)
-    except subprocess.TimeoutExpired:
-        raise TopazError(f"Timeout setelah {timeout_sec} detik")
-
-    if result.returncode != 0:
-        # stderr berisi traceback dan path lokal: hanya ke log, bukan ke DB/UI
-        print(result.stderr.strip(), file=sys.stderr, flush=True)
-        raise TopazError("fake topaz gagal")
-    if not output_path.exists():
-        raise TopazError("Output tidak ditemukan")
+    run_real(cmd, timeout_sec, "Topaz", output_path)
 
 
 def _run_topaz(input_path: Path, output_path: Path, timeout_sec: int):
@@ -74,47 +64,17 @@ def _run_topaz(input_path: Path, output_path: Path, timeout_sec: int):
         "TVAI_MODEL_DIR": config.TVAI_MODEL_DIR,
         "TVAI_MODEL_DATA_DIR": config.TVAI_MODEL_DATA_DIR,
     }
-    proc = _start(cmd, env)
     try:
-        _, stderr = proc.communicate(timeout=timeout_sec)
+        returncode, stderr = run_with_timeout(cmd, env, timeout_sec)
+    except OSError:
+        raise TopazError("TOPAZ_FFMPEG_PATH tidak bisa dijalankan")
     except subprocess.TimeoutExpired:
-        _kill_tree(proc)
-        proc.communicate()
         raise TopazError(f"Timeout setelah {timeout_sec} detik")
 
-    if proc.returncode != 0:
+    if returncode != 0:
         # stderr berisi log ffmpeg dan path lokal: hanya ke log, bukan ke DB/UI
         print(stderr.strip(), file=sys.stderr, flush=True)
         raise TopazError("topaz gagal")
     if not output_path.exists():
         raise TopazError("Output tidak ditemukan")
 
-
-def _start(cmd, env):
-    kwargs = {}
-    if os.name != "nt":
-        kwargs["start_new_session"] = True  # pgid = pid, supaya seluruh grup bisa dibunuh
-    try:
-        return subprocess.Popen(
-            cmd,
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            env=env,
-            **kwargs,
-        )
-    except OSError:
-        raise TopazError("TOPAZ_FFMPEG_PATH tidak bisa dijalankan")
-
-
-def _kill_tree(proc):
-    if os.name == "nt":
-        subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True)
-        return
-    try:
-        os.killpg(proc.pid, signal.SIGKILL)
-    except ProcessLookupError:
-        pass

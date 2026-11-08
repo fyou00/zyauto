@@ -54,7 +54,7 @@ def download_job(job_id: str):
     stem = UNSAFE_CHARS.sub("_", Path(job["original_name"]).stem).strip("._") or "video"
     return FileResponse(
         output_path,
-        filename=f"upscaled_{stem}.{job['ext']}",
+        filename=f"upscaled_{stem}{output_path.suffix}",  # topaz_cc keluar sebagai .mp4 dari HandBrake
         media_type="application/octet-stream",
     )
 
@@ -80,7 +80,7 @@ def validate_service(service: str, cc_preset: str):
         return None
     if not cc_preset:
         raise HTTPException(400, "Pilih preset CC untuk layanan topaz_cc")
-    if cc_preset not in {p["id"] for p in config.CC_PRESETS}:
+    if config.get_cc_preset(cc_preset) is None:
         raise HTTPException(400, "Preset tidak dikenal")
     return cc_preset
 
