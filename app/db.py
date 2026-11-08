@@ -19,10 +19,22 @@ CREATE TABLE IF NOT EXISTS jobs (
   error         TEXT,
   created_at    TEXT NOT NULL,
   started_at    TEXT,
-  finished_at   TEXT
+  finished_at   TEXT,
+  service       TEXT NOT NULL DEFAULT 'topaz_only' CHECK (service IN ('topaz_only','topaz_cc')),
+  cc_preset     TEXT,
+  stage         TEXT CHECK (stage IS NULL OR stage IN ('topaz','ae','encoding')),
+  intermediate_path TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_jobs_status_created ON jobs(status, created_at);
 """
+
+# Migrasi untuk DB lama: kolom ditambah jika belum ada. Baris lama jadi service='topaz_only'.
+MIGRATIONS = [
+    ("service", "TEXT NOT NULL DEFAULT 'topaz_only' CHECK (service IN ('topaz_only','topaz_cc'))"),
+    ("cc_preset", "TEXT"),
+    ("stage", "TEXT CHECK (stage IS NULL OR stage IN ('topaz','ae','encoding'))"),
+    ("intermediate_path", "TEXT"),
+]
 
 
 @contextmanager
@@ -43,8 +55,13 @@ def now_iso():
 def init_db():
     config.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     config.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    config.INTERMEDIATE_DIR.mkdir(parents=True, exist_ok=True)
     with get_conn() as conn:
         conn.executescript(SCHEMA)
+        existing = {row["name"] for row in conn.execute("PRAGMA table_info(jobs)")}
+        for name, definition in MIGRATIONS:
+            if name not in existing:
+                conn.execute(f"ALTER TABLE jobs ADD COLUMN {name} {definition}")
 
 
 def list_jobs(limit=50):
@@ -127,10 +144,26 @@ def get_job(job_id):
         return dict(row) if row else None
 
 
-def create_job(job_id, original_name, ext, input_path, size_bytes):
+def set_stage(job_id, stage):
+    """stage: 'topaz' | 'ae' | 'encoding' | None."""
+    with get_conn() as conn:
+        conn.execute("UPDATE jobs SET stage = ? WHERE id = ?", (stage, job_id))
+
+
+def set_intermediate_path(job_id, path):
+    """path: file perantara, atau None setelah dihapus."""
     with get_conn() as conn:
         conn.execute(
-            "INSERT INTO jobs (id, original_name, ext, input_path, size_bytes, status, created_at) "
-            "VALUES (?, ?, ?, ?, ?, 'queued', ?)",
-            (job_id, original_name, ext, str(input_path), size_bytes, now_iso()),
+            "UPDATE jobs SET intermediate_path = ? WHERE id = ?",
+            (str(path) if path is not None else None, job_id),
+        )
+
+
+def create_job(job_id, original_name, ext, input_path, size_bytes,
+               service="topaz_only", cc_preset=None):
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT INTO jobs (id, original_name, ext, input_path, size_bytes, status, created_at, "
+            "service, cc_preset) VALUES (?, ?, ?, ?, ?, 'queued', ?, ?, ?)",
+            (job_id, original_name, ext, str(input_path), size_bytes, now_iso(), service, cc_preset),
         )

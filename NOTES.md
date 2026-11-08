@@ -12,14 +12,24 @@ Tujuannya untuk enchancement video dengan resolusi asli (original). Buktikan alu
 - [x] 6. Recovery: job 'processing' kembali 'queued' saat worker start; timeout job
 - [ ] 7. Integrasi Topaz asli (enhancement, tanpa upscaling). Kode selesai; tes Topaz asli di Windows: PENDING (user)
 
-Commit terakhir: feat: daftar job dengan polling htmx
+Commit terakhir: feat: kolom service, cc_preset, stage, intermediate_path dan migrasi db
+
+## Layanan AE (rencana lengkap di PLAN.md, bagian "Layanan AE")
+- [x] 2. DB: kolom service, cc_preset, stage, intermediate_path + migrasi
+- [ ] 3. UI: radio layanan, dropdown preset CC, kolom Layanan dan Tahap
+- [ ] 4. Worker bertahap topaz -> ae -> encode, FAKE_AE, tes aturan antrian
 
 ## Keputusan
 - Stack: FastAPI + Jinja2 + HTMX, SQLite untuk jobs, tanpa Redis/Celery.
 - Satu worker, satu job sekali jalan (hanya 1 GPU).
 - Status job: queued -> processing -> done / failed.
 - Format upload: mp4, mov, mkv. Batas ukuran di config.py (default 500 MB).
-- Di luar prototype: login, kuota, payment, After Effects, CSS.
+- Di luar prototype: login, kuota, payment, CSS. (After Effects sekarang masuk lewat bagian "Layanan AE"; .clinerules belum diperbarui, menunggu izin user.)
+- Layanan: topaz_only dan topaz_cc. Satu order = satu job. Worker memproses satu job penuh (termasuk seluruh tahap AE) sebelum job berikutnya; AE gagal -> job failed, job berikutnya lanjut.
+- Skema (langkah 2): kolom baru service (default 'topaz_only', CHECK), cc_preset, stage (CHECK topaz|ae|encoding atau NULL), intermediate_path. Migrasi lewat ALTER TABLE ADD COLUMN di init_db(), dilewati jika kolom sudah ada; baris lama terbaca sebagai topaz_only.
+- Daftar preset CC dibaca dari CC_PRESETS di .env (dipisah koma), default kosong. Nama preset belum diputuskan user, tidak diisi tebakan.
+- Tanpa pilihan layanan: ditolak (400), tidak ada default di server. Berlaku saat UI/route dikerjakan di langkah 3.
+- File perantara disimpan di data/intermediates (INTERMEDIATE_DIR), dihapus saat job selesai atau gagal (langkah 4).
 
 ## Konteks
 - PC: i5-4690, 16 GB DDR3, GTX 1070 Ti. Server dan worker satu mesin.
@@ -28,7 +38,12 @@ Commit terakhir: feat: daftar job dengan polling htmx
 ## Masalah terbuka
 - Nilai TOPAZ_FILTER dan TVAI_* di .env belum diisi user (kode siap, tes asli menunggu Windows).
 - Dukungan GTX 1070 Ti di versi Topaz yang dipakai belum dites.
-- Waktu proses After Effects belum diukur (belum masuk prototype).
+- Waktu proses After Effects belum diukur.
+- Nama dan daftar preset CC (CC_PRESETS) belum diisi user. Nama atau file .aep/.ffx?
+- Apakah ada encode ulang setelah AE, atau output AE langsung final? Menentukan isi tahap 'encoding' (langkah 4).
+- Toggle dropdown preset: rencana HTMX murni (route fragment), menunggu konfirmasi (langkah 3).
+- AE_AERENDER_PATH dan AE_PROJECT_PATH di .env belum diisi (langkah 4, tes asli di Windows).
+- .clinerules masih menyebut After Effects di luar batasan prototype; perlu izin user untuk diperbarui.
 
 ## Catatan sesi
 (agent menambah ringkasan singkat di sini setelah tiap tugas)

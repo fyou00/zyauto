@@ -22,6 +22,7 @@ _load_dotenv(BASE_DIR / ".env")
 DATA_DIR = BASE_DIR / "data"
 UPLOAD_DIR = DATA_DIR / "uploads"
 OUTPUT_DIR = DATA_DIR / "outputs"
+INTERMEDIATE_DIR = DATA_DIR / "intermediates"  # file perantara Topaz/AE, dihapus setelah job selesai
 DB_PATH = DATA_DIR / "app.sqlite"
 TEMPLATE_DIR = BASE_DIR / "app" / "templates"
 STATIC_DIR = BASE_DIR / "app" / "static"
@@ -37,6 +38,21 @@ POLL_INTERVAL_SEC = 3            # interval polling status di halaman (HTMX)
 
 # Mode FAKE: worker menjalankan app/fake_topaz.py sebagai pengganti Topaz
 FAKE_TOPAZ_DELAY_SEC = 5
+
+# Layanan yang tersedia. topaz_cc butuh preset CC.
+SERVICES = ("topaz_only", "topaz_cc")
+
+# Daftar preset CC diisi user di .env, dipisah koma (contoh: CC_PRESETS=preset_a,preset_b).
+# JANGAN diisi tebakan di sini: nama preset ditentukan user.
+CC_PRESETS = [p.strip() for p in os.environ.get("CC_PRESETS", "").split(",") if p.strip()]
+
+# Mode FAKE AE: tahap AE menyalin file saja (untuk tes di macOS tanpa After Effects)
+FAKE_AE_DELAY_SEC = 5
+
+# After Effects asli (langkah 4). Nilai diisi user di .env (lihat .env.example).
+# JANGAN diisi tebakan di sini.
+AE_AERENDER_PATH = os.environ.get("AE_AERENDER_PATH", "")  # path aerender.exe
+AE_PROJECT_PATH = os.environ.get("AE_PROJECT_PATH", "")    # path project .aep yang dipakai aerender
 
 # Topaz asli (langkah 7). Nilai diisi user di .env (lihat .env.example). JANGAN diisi tebakan di sini.
 TOPAZ_FFMPEG_PATH = os.environ.get("TOPAZ_FFMPEG_PATH", "")  # path ffmpeg dari Topaz Video AI
