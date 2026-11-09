@@ -18,6 +18,7 @@ Commit terakhir: feat: worker pipeline bertahap topaz -> ae -> encoding dengan F
 - [x] 2. DB: kolom service, cc_preset, stage, intermediate_path + migrasi
 - [x] 3. UI: radio layanan, dropdown preset CC, kolom Layanan dan Tahap
 - [x] 4. Worker bertahap topaz -> ae -> encode, FAKE_AE, tes aturan antrian
+- [x] Kolom waktu render sementara untuk testing, dikontrol `SHOW_RENDER_TIME`
 - [ ] 1, 5, 6, 7: placeholder kosong di PLAN.md (tes AE asli di Windows)
 
 ## Keputusan
@@ -34,6 +35,9 @@ Commit terakhir: feat: worker pipeline bertahap topaz -> ae -> encoding dengan F
 - Layanan: topaz_only dan topaz_cc. Satu order = satu job. Worker memproses satu job penuh (termasuk seluruh tahap AE) sebelum job berikutnya; AE gagal -> job failed, job berikutnya lanjut.
 - Skema (langkah 2): kolom baru service (default 'topaz_only', CHECK), cc_preset, stage (CHECK topaz|ae|encoding atau NULL), intermediate_path. Migrasi lewat ALTER TABLE ADD COLUMN di init_db(), dilewati jika kolom sudah ada; baris lama terbaca sebagai topaz_only.
 - Daftar preset CC dibaca dari CC_PRESETS di .env (dipisah koma), default kosong. Nama preset belum diputuskan user, tidak diisi tebakan.
+- Kolom waktu render hanya untuk testing: `SHOW_RENDER_TIME=1` menampilkan durasi total `started_at -> finished_at`; default mati, sehingga tidak dirender ke user saat deploy. Job processing menampilkan waktu berjalan; queued menampilkan `-`.
+- Tidak ada kolom DB baru untuk waktu render. Durasi diformat sebagai `5m 12s` (atau `1h 2m 5s`) di route `/jobs`. Requeue worker tetap membuat durasi hanya mencerminkan percobaan terakhir.
+
 - Tanpa pilihan layanan: ditolak (400), tidak ada default di server. Berlaku saat UI/route dikerjakan di langkah 3.
 - File perantara disimpan di data/intermediates (INTERMEDIATE_DIR), dihapus saat job selesai atau gagal (langkah 4).
 - Langkah 4 selesai (tes Mac, FAKE). Urutan tahap di log berstempel waktu: topaz -> ae -> encoding -> done. Job 2 baru processing setelah job 1 done/failed (`tests_queue.py`, skenario A dan B lulus).
@@ -72,6 +76,14 @@ Semua tes memakai DB dan folder sementara di /tmp. DB asli tidak disentuh.
 - Timeout tahap AE melapor AE: timeout setelah N detik, dan proses anak ikut mati.
 - Bug ditemukan saat tes: subprocess.run(timeout=) tidak membunuh anak. Sekarang jalur FAKE juga lewat run_real.
 
+### Waktu render (flag SHOW_RENDER_TIME)
+- Unit `format_duration`: 0s, 59s, 1m 1s, 5m 12s, 1h 2m 5s, queued "-", started_at kosong, finished_at kosong, selesai lebih awal -> 0s, timestamp rusak. LULUS.
+- HTTP flag tidak diset dan `SHOW_RENDER_TIME=0`: header dan nilai durasi tidak ada di HTML (6 kolom). LULUS.
+- HTTP `SHOW_RENDER_TIME=1`: header muncul, job done `5m 12s`, job queued `-` (7 kolom). LULUS.
+- End-to-end FAKE: topaz_cc 11 detik (Topaz 5 + AE 3 + HandBrake 3), topaz_only 5 detik. LULUS.
+- Regresi `tests_queue.py` skenario A/B: LULUS.
+- Total 19/19 cek unit+HTTP lulus.
+
 Belum dites: AE asli (aerender), HandBrakeCLI asli, NVENC di Windows.
 
 ## Konteks
@@ -83,6 +95,7 @@ Belum dites: AE asli (aerender), HandBrakeCLI asli, NVENC di Windows.
 - `CC_PRESETS` di app/config.py berisi 5 preset UJI untuk FAKE_AE (soft_fresh, dream_glow, blue_beats, warm_pop, punchy_contrast). Dua terakhir dipilih bebas atas izin user. Nama final dan file .aep (presets/*.aep, belum ada) menunggu user. FAKE_AE tidak membaca aep_path.
 - Preset HandBrake (presets/*.json, nama preset, encoder NVENC) belum ada. Dibutuhkan untuk tes asli di Windows (langkah 4).
 - Toggle dropdown preset: selesai (HTMX murni, GET /ui/cc-presets), tidak ada pertanyaan terbuka.
+
 - AE_AERENDER_PATH dan AE_PROJECT_PATH di .env belum diisi (langkah 4, tes asli di Windows).
 - Tes asli HandBrakeCLI dan NVENC belum dilakukan (menunggu Windows).
 

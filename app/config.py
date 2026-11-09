@@ -36,6 +36,10 @@ MAX_ATTEMPTS = 2                 # percobaan maksimal per job (termasuk percobaa
 JOB_TIMEOUT_SEC = 25 * 60        # 25 menit per job
 POLL_INTERVAL_SEC = 3            # interval polling status di halaman (HTMX)
 
+# Kolom "Waktu render" di daftar job. HANYA untuk testing: aktif jika SHOW_RENDER_TIME=1 di .env.
+# Default mati, jadi di produksi user tidak melihat kolom ini (tidak dirender sama sekali).
+SHOW_RENDER_TIME = os.environ.get("SHOW_RENDER_TIME") == "1"
+
 # Mode FAKE: worker menjalankan app/fake_topaz.py sebagai pengganti Topaz
 FAKE_TOPAZ_DELAY_SEC = 5
 

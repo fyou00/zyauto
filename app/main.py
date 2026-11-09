@@ -3,6 +3,7 @@
 import re
 import uuid
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
@@ -31,12 +32,55 @@ def index(request: Request):
     return templates.TemplateResponse(request, "index.html", {})
 
 
+def _parse_iso(value):
+    """Timestamp ISO dari db.now_iso() -> datetime UTC, atau None jika kosong/tidak valid."""
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value)
+    except (TypeError, ValueError):
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+
+def format_duration(job, now=None):
+    """Waktu proses job (started_at -> finished_at), format '5m 12s'. '-' jika belum bisa dihitung.
+
+    processing: waktu berjalan sampai sekarang. Hanya dipakai saat SHOW_RENDER_TIME aktif.
+    """
+    start = _parse_iso(job.get("started_at"))
+    if start is None or job.get("status") == "queued":
+        return "-"
+    if job.get("status") == "processing":
+        end = now or datetime.now(timezone.utc)
+    else:
+        end = _parse_iso(job.get("finished_at"))
+        if end is None:
+            return "-"
+    total = max(0, int((end - start).total_seconds()))
+    hours, rest = divmod(total, 3600)
+    minutes, seconds = divmod(rest, 60)
+    if hours:
+        return f"{hours}h {minutes}m {seconds}s"
+    if minutes:
+        return f"{minutes}m {seconds}s"
+    return f"{seconds}s"
+
+
 @app.get("/jobs", response_class=HTMLResponse)
 def list_jobs(request: Request):
+    jobs = db.list_jobs()
+    if config.SHOW_RENDER_TIME:  # flag mati: durasi tidak dihitung dan tidak dikirim ke template
+        for job in jobs:
+            job["duration"] = format_duration(job)
     return templates.TemplateResponse(
         request,
         "_jobs.html",
-        {"jobs": db.list_jobs(), "poll_sec": config.POLL_INTERVAL_SEC},
+        {
+            "jobs": jobs,
+            "poll_sec": config.POLL_INTERVAL_SEC,
+            "show_render_time": config.SHOW_RENDER_TIME,
+        },
     )
 
 
