@@ -10,7 +10,7 @@ Tujuannya untuk enchancement video dengan resolusi asli (original). Buktikan alu
 - [x] 4. Worker: ambil job, mode FAKE_TOPAZ, ubah status
 - [x] 5. Download hasil
 - [x] 6. Recovery: job 'processing' kembali 'queued' saat worker start; timeout job
-- [x] 7. Integrasi Topaz asli (enhancement, tanpa upscaling). Kode selesai; tes Topaz asli di Windows: PENDING (user)
+- [x] 7. Integrasi Topaz asli (enhancement, tanpa upscaling). Kode selesai; tes Topaz asli di Windows: selesai (dikonfirmasi user)
 
 Commit terakhir: fix: validasi output tahap AE dan HandBrake, stderr tool ke log
 
@@ -154,6 +154,6 @@ Belum dites: AE asli (aerender), HandBrakeCLI asli, NVENC di Windows.
 - Command Topaz: list argumen, urutan sesuai command manual yang sudah jalan. Disimpan sebagai TOPAZ_ENCODE_ARGS (sebelum -filter_complex) dan TOPAZ_ENCODE_ARGS_TAIL (sesudahnya), karena -filter_complex ada di tengah. TVAI_* dikirim sebagai env subprocess.
 - Timeout Topaz: Windows pakai taskkill /F /T; macOS/Linux pakai start_new_session + killpg. Jalur FAKE tidak berubah.
 - Tes (salinan repo di /tmp, DB asli tidak tersentuh): FAKE_TOPAZ=1 worker -> done, output identik input. FAKE_TOPAZ=0 dengan env kosong -> failed "Topaz belum dikonfigurasi, kosong: ..." dan worker tetap hidup. Argumen yang dikirim cocok dengan urutan spesifikasi (dicek lewat skrip stub). Timeout 2 detik -> failed, anak ffmpeg (sleep) ikut mati.
-- Belum dites: Topaz asli di Windows (user). Setelah itu langkah 7 ditandai [x] dan commit lagi.
+- Tes Topaz asli di Windows sudah selesai menurut user. Dokumen `TESTING_WINDOWS.md` dihapus (riwayat tetap di git). Langkah 7 ditandai [x].
 - Perubahan di luar lingkup: tidak ada. Kata "upscaling" di .clinerules dan NOTES.md sudah diganti. Yang masih ada dan sengaja tidak diubah: judul halaman "Upscaling Video" (index.html), nama unduhan "upscaled_<stem>" (main.py), PLAN.md, dan docstring awal yang sudah diubah di topaz.py.
 - Catatan: FAKE_TOPAZ_DELAY_SEC di config.py tetap hardcode 5 (.env.example memuat nilainya, tapi tidak dibaca). Tidak diubah karena di luar lingkup.

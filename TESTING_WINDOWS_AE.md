@@ -3,11 +3,9 @@
 Dokumen ini untuk menguji layanan `topaz_cc` (Topaz -> AE -> HandBrake) di PC Windows.
 Tujuan: buktikan job `topaz_cc` selesai penuh dari upload sampai file hasil bisa diunduh.
 
-Baca juga `TESTING_WINDOWS.md` (tes Topaz / `topaz_only`). Kerjakan dokumen itu dulu; kalau `topaz_only` belum jalan, `topaz_cc` juga tidak akan jalan.
-
 ## 0. Prasyarat
 
-- Topaz Video AI berfungsi (`topaz_only` sudah lulus). `ffprobe.exe` harus ada di folder yang sama dengan `ffmpeg.exe` Topaz.
+- Topaz Video AI terpasang dan berfungsi. `ffprobe.exe` harus ada di folder yang sama dengan `ffmpeg.exe` Topaz (dipakai untuk membaca durasi dan orientasi).
 - After Effects terpasang dan sudah pernah dibuka sekali (lisensi aktif).
 - HandBrake terpasang, dan `HandBrakeCLI.exe` ada (biasanya di `C:\Program Files\HandBrake\HandBrakeCLI.exe`).
 - Driver NVIDIA terbaru (encoder NVENC).
