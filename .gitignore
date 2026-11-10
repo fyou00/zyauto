@@ -10,3 +10,4 @@ data/
 .env
 DONTREADME.md
 .DS_Store
+presets/

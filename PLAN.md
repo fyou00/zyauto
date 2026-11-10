@@ -202,7 +202,9 @@ Status: BELUM bisa dijalankan. Menunggu keputusan "cara input hasil Topaz masuk 
 7. Catat waktu tahap AE dari log untuk mengisi masalah terbuka "waktu proses AE belum diukur".
 
 ### Path file .aep
-- Setiap preset punya `aep_path` di `app/config.py`, dihitung dari `BASE_DIR` (`BASE_DIR / "presets" / "<id>.aep"`). Path ini memakai pathlib, jadi berjalan di Windows dan macOS tanpa edit.
-- Tidak ada path .aep di `.env`. Path mesin tidak boleh di-hardcode, dan `.env` cocok untuk nilai per mesin. Kalau file .aep sebaiknya di luar repo, ubah ke env var `AE_PRESET_DIR` (keputusan user).
-- Belum tersambung: `_run_aerender` belum memakai `aep_path`. Saat implementasi, `-project` diisi dari `aep_path` preset yang dipilih job.
-- `presets/` belum ada di `.gitignore`. File `.aep` berukuran besar dan biner. Keputusan user: disimpan di repo atau di luar repo.
+- Keputusan (disetujui user): `AE_PRESET_DIR` dari `.env`; kosong -> `BASE_DIR / "presets"`.
+- `aep_path` per preset = `AE_PRESET_DIR / "<nama_file>.aep"` (pathlib).
+- `presets/` ada di `.gitignore` (berlaku untuk fallback). File .aep tidak di-commit; yang di-commit hanya daftar preset di config.py.
+- `_run_aerender`: `-project` diisi dari `aep_path`. Jika file tidak ada -> job failed dengan pesan jelas, bukan crash.
+- `FAKE_AE=1` tidak membaca file .aep sama sekali.
+- Status: aturan path sudah diimplementasikan dan dites di Mac (10/10). Blok render aerender masih menunggu keputusan input ke comp.

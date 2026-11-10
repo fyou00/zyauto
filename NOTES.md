@@ -29,6 +29,8 @@ Commit terakhir: feat: worker pipeline bertahap topaz -> ae -> encoding dengan F
 - Di luar prototype: login, kuota, payment, CSS. (After Effects sekarang masuk lewat bagian "Layanan AE"; .clinerules sudah diperbarui sesuai keputusan user.)
 - Encoding akhir topaz_cc: AE render ke .mov (QuickTime), lalu HandBrakeCLI encode ke .mp4 dengan preset NVENC dari presets/. Bukan ffmpeg. topaz_only tidak di-encode ulang.
 - Preset CC: id stabil + label UI + path .aep, di config.py. Dropdown hanya tampilan; server tetap memvalidasi id.
+- Path .aep: `AE_PRESET_DIR` dari .env (kosong -> `BASE_DIR / "presets"`), `aep_path = AE_PRESET_DIR / "<file>.aep"` (pathlib, tanpa hardcode mesin). `presets/` di .gitignore; file .aep tidak di-commit, hanya daftar preset di config.py.
+- `_run_aerender`: cek config dulu, lalu cek file .aep. Jika file tidak ada -> job failed "AE: file preset tidak ditemukan: <nama file>" (nama saja, tanpa path lokal), bukan crash. `-project` akan diisi `str(aep_path)`. FAKE_AE tidak membaca aep_path sama sekali.
 - Langkah 3: radio layanan wajib (atribut `required`, tanpa default terpilih). Dropdown preset diisi HTMX lewat GET /ui/cc-presets?service=... (tanpa JS inline). Daftar preset berasal dari config.CC_PRESETS, template hanya loop.
 - Validasi server di `validate_service()`: service kosong/tidak dikenal -> 400 "Pilih layanan (topaz_only atau topaz_cc)"; topaz_cc tanpa preset -> 400 "Pilih preset CC untuk layanan topaz_cc"; id preset tidak ada di config -> 400 "Preset tidak dikenal"; topaz_only mengabaikan cc_preset (disimpan NULL). Validasi dijalankan SEBELUM file disimpan, supaya tidak ada file yatim di data/uploads.
 - Kolom tabel: Layanan dan Tahap (stage ditampilkan "-" jika NULL). CC_PRESETS tidak lagi dibaca dari .env.
@@ -83,6 +85,15 @@ Semua tes memakai DB dan folder sementara di /tmp. DB asli tidak disentuh.
 - End-to-end FAKE: topaz_cc 11 detik (Topaz 5 + AE 3 + HandBrake 3), topaz_only 5 detik. LULUS.
 - Regresi `tests_queue.py` skenario A/B: LULUS.
 - Total 19/19 cek unit+HTTP lulus.
+
+### Path preset .aep (AE_PRESET_DIR)
+- Fallback tanpa env: `AE_PRESET_DIR` = `<repo>/presets`, semua aep_path di folder itu. LULUS.
+- `AE_PRESET_DIR` dari env: aep_path = `<AE_PRESET_DIR>/<file>.aep`. LULUS.
+- Mode asli, file .aep tidak ada: `AE: file preset tidak ditemukan: soft_fresh.aep`, tanpa traceback. LULUS.
+- Mode asli, config kosong: `AE belum dikonfigurasi, kosong: AE_AERENDER_PATH, AE_COMP_NAME, AE_OM_TEMPLATE`. LULUS.
+- FAKE_AE=1 dengan AE_PRESET_DIR tidak ada: tetap sukses (tidak membaca .aep). LULUS.
+- `presets/` ada di .gitignore. LULUS.
+- Regresi: `tests_queue.py` A/B, tes HTTP 5 preset, tes waktu render 19/19. LULUS.
 
 Belum dites: AE asli (aerender), HandBrakeCLI asli, NVENC di Windows.
 

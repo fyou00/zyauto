@@ -47,14 +47,19 @@ FAKE_TOPAZ_DELAY_SEC = 5
 SERVICES = ("topaz_only", "topaz_cc")
 
 # Preset CC. id stabil (dipakai di DB dan form), label untuk UI, aep_path = template .aep.
-# Catatan: ini daftar UJI untuk FAKE_AE. Nama dan file .aep belum final, dan file .aep belum ada
-# (FAKE_AE hanya menyalin file, tidak membaca aep_path). Ganti dengan daftar asli setelah tes Windows.
+# aep_file = nama file di AE_PRESET_DIR. AE_PRESET_DIR dari .env; kosong -> BASE_DIR / "presets".
+# File .aep TIDAK di-commit (presets/ ada di .gitignore). FAKE_AE tidak membaca aep_path sama sekali.
+AE_PRESET_DIR = Path(os.environ.get("AE_PRESET_DIR") or BASE_DIR / "presets")
+_PRESET_FILES = (
+    ("soft_fresh", "CC Soft Fresh", "soft_fresh.aep"),
+    ("dream_glow", "CC Dream Glow", "dream_glow.aep"),
+    ("blue_beats", "CC Blue Beats", "blue_beats.aep"),
+    ("warm_pop", "CC Warm Pop", "warm_pop.aep"),
+    ("punchy_contrast", "CC Punchy Contrast", "punchy_contrast.aep"),
+)
 CC_PRESETS = [
-    {"id": "soft_fresh", "label": "CC Soft Fresh", "aep_path": BASE_DIR / "presets" / "soft_fresh.aep"},
-    {"id": "dream_glow", "label": "CC Dream Glow", "aep_path": BASE_DIR / "presets" / "dream_glow.aep"},
-    {"id": "blue_beats", "label": "CC Blue Beats", "aep_path": BASE_DIR / "presets" / "blue_beats.aep"},
-    {"id": "warm_pop", "label": "CC Warm Pop", "aep_path": BASE_DIR / "presets" / "warm_pop.aep"},
-    {"id": "punchy_contrast", "label": "CC Punchy Contrast", "aep_path": BASE_DIR / "presets" / "punchy_contrast.aep"},
+    {"id": pid, "label": label, "aep_path": AE_PRESET_DIR / filename}
+    for pid, label, filename in _PRESET_FILES
 ]
 
 
