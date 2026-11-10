@@ -183,3 +183,26 @@ Belum diisi. Akan ditulis setelah keputusan user. Tes: Windows langsung (AE asli
 
 ## Langkah 7 - (placeholder, kosong)
 Belum diisi. Akan ditulis setelah keputusan user. Tes: Windows langsung (AE asli).
+
+## Tes AE asli di Windows (diperbarui)
+Status: BELUM bisa dijalankan. Menunggu keputusan "cara input hasil Topaz masuk ke comp" dan implementasi `_run_aerender` di app/ae.py (saat ini sengaja berhenti dengan pesan "AE asli belum siap").
+
+### Prasyarat
+- After Effects terpasang, sudah pernah dibuka sekali (lisensi aktif). Catat versi AE.
+- Project template `.aep` berisi satu comp dengan layer footage pengganti. Nama comp dicatat persis.
+- Template output module QuickTime dibuat di AE (menu Output Module Templates). Nama template dicatat persis.
+
+### Langkah tes (urutan wajib)
+1. Baca opsi yang didukung versi AE ini: `& "C:\Program Files\Adobe\Adobe After Effects <versi>\Support Files\aerender.exe" -help`. Opsi yang dipakai di kode harus sesuai output ini (tidak dari ingatan atau dokumentasi lama).
+2. Render manual dari PowerShell dengan opsi dari langkah 1 (project, comp, output .mov, output module). Harapan: file .mov terbentuk. Catat durasi dan ukuran file.
+3. Isi `.env`: `FAKE_AE=0`, `AE_AERENDER_PATH`, `AE_COMP_NAME`, `AE_OM_TEMPLATE`. Lalu cek dengan `python -c` seperti di TESTING_WINDOWS.md (bagian A).
+4. Tes gagal dulu: `AE_AERENDER_PATH` diisi path salah. Harapan: job `topaz_cc` failed dengan pesan "AE tidak bisa dijalankan", worker tetap hidup.
+5. Tes sukses: upload `topaz_cc` dengan video pendek. Harapan di log worker: `stage ae start`, `stage ae end`, lalu `stage encoding start/end` (HandBrake), `done`. Simpan log lengkap.
+6. Tes timeout AE: turunkan batas waktu sementara (satu kali, lalu kembalikan). Harapan: job failed dengan pesan timeout, dan tidak ada `aerender.exe` yang masih berjalan di Task Manager.
+7. Catat waktu tahap AE dari log untuk mengisi masalah terbuka "waktu proses AE belum diukur".
+
+### Path file .aep
+- Setiap preset punya `aep_path` di `app/config.py`, dihitung dari `BASE_DIR` (`BASE_DIR / "presets" / "<id>.aep"`). Path ini memakai pathlib, jadi berjalan di Windows dan macOS tanpa edit.
+- Tidak ada path .aep di `.env`. Path mesin tidak boleh di-hardcode, dan `.env` cocok untuk nilai per mesin. Kalau file .aep sebaiknya di luar repo, ubah ke env var `AE_PRESET_DIR` (keputusan user).
+- Belum tersambung: `_run_aerender` belum memakai `aep_path`. Saat implementasi, `-project` diisi dari `aep_path` preset yang dipilih job.
+- `presets/` belum ada di `.gitignore`. File `.aep` berukuran besar dan biner. Keputusan user: disimpan di repo atau di luar repo.
