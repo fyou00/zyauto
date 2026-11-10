@@ -12,7 +12,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from app import config, db
+from app import config, db, media
 from app.ae import run_ae
 from app.handbrake import run_encode
 from app.proc import ToolError
@@ -54,8 +54,16 @@ def run_pipeline(job):
     preset = config.get_cc_preset(job["cc_preset"])
     run_stage(job_id, "topaz", run_upscale,
               (input_path, topaz_out, config.JOB_TIMEOUT_SEC), intermediate=topaz_out)
+    # Orientasi template AE ditentukan dari video asli (landscape/portrait)
+    orientation = "landscape"
+    try:
+        orientation = media.probe(input_path)["orientation"]
+        log(f"job {job_id} orientasi {orientation}")
+    except media.MediaError as e:
+        # ffprobe hanya untuk memilih template; kalau tidak terbaca pakai template landscape
+        log(f"job {job_id} orientasi tidak terbaca ({e}), pakai landscape")
     run_stage(job_id, "ae", run_ae,
-              (topaz_out, ae_out, preset, config.JOB_TIMEOUT_SEC), intermediate=ae_out)
+              (topaz_out, ae_out, preset, config.JOB_TIMEOUT_SEC, orientation), intermediate=ae_out)
     run_stage(job_id, "encoding", run_encode,
               (ae_out, output, config.JOB_TIMEOUT_SEC))
     return output

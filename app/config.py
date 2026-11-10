@@ -50,6 +50,11 @@ SERVICES = ("topaz_only", "topaz_cc")
 # aep_file = nama file di AE_PRESET_DIR. AE_PRESET_DIR dari .env; kosong -> BASE_DIR / "presets".
 # File .aep TIDAK di-commit (presets/ ada di .gitignore). FAKE_AE tidak membaca aep_path sama sekali.
 AE_PRESET_DIR = Path(os.environ.get("AE_PRESET_DIR") or BASE_DIR / "presets")
+# Folder kerja AE: hasil Topaz disalin ke sini sebagai input<ext> sebelum aerender. Harus sama dengan
+# nama placeholder footage di file .aep. Dibuat otomatis (mkdir) oleh ae.py.
+AE_WORK_DIR = Path(os.environ.get("AE_WORK_DIR") or DATA_DIR / "ae_work")
+# Nama file input di AE_WORK_DIR tanpa ekstensi. Ekstensi mengikuti hasil Topaz (mp4/mov/mkv).
+AE_INPUT_STEM = "input"
 _PRESET_FILES = (
     ("soft_fresh", "CC Soft Fresh", "soft_fresh.aep"),
     ("dream_glow", "CC Dream Glow", "dream_glow.aep"),

@@ -14,7 +14,7 @@ class ToolError(Exception):
     """Gagal di salah satu tahap pipeline. Pesan boleh tampil di UI (tanpa path lokal atau stderr)."""
 
 
-def start(cmd, env):
+def start(cmd, env, capture_stdout=False):
     """Menjalankan proses. Melempar OSError jika executable tidak bisa dijalankan."""
     kwargs = {}
     if os.name != "nt":
@@ -22,7 +22,7 @@ def start(cmd, env):
     return subprocess.Popen(
         cmd,
         stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL,
+        stdout=subprocess.PIPE if capture_stdout else subprocess.DEVNULL,
         stderr=subprocess.PIPE,
         text=True,
         encoding="utf-8",
@@ -55,6 +55,24 @@ def run_with_timeout(cmd, env, timeout_sec):
         proc.communicate()
         raise
     return proc.returncode, stderr
+
+
+def run_capture(cmd, timeout_sec, label):
+    """Menjalankan tool dan mengembalikan stdout. Timeout tetap membunuh seluruh pohon proses."""
+    try:
+        proc = start(cmd, None, capture_stdout=True)
+    except OSError:
+        raise ToolError(f"{label} tidak bisa dijalankan")
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout_sec)
+    except subprocess.TimeoutExpired:
+        kill_tree(proc)
+        proc.communicate()
+        raise ToolError(f"{label}: timeout setelah {timeout_sec} detik")
+    if proc.returncode != 0:
+        print(stderr.strip(), file=sys.stderr, flush=True)
+        raise ToolError(f"{label} gagal")
+    return stdout
 
 
 def run_real(cmd, timeout_sec, label, output_path):

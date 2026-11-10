@@ -207,4 +207,7 @@ Status: BELUM bisa dijalankan. Menunggu keputusan "cara input hasil Topaz masuk 
 - `presets/` ada di `.gitignore` (berlaku untuk fallback). File .aep tidak di-commit; yang di-commit hanya daftar preset di config.py.
 - `_run_aerender`: `-project` diisi dari `aep_path`. Jika file tidak ada -> job failed dengan pesan jelas, bukan crash.
 - `FAKE_AE=1` tidak membaca file .aep sama sekali.
-- Status: aturan path sudah diimplementasikan dan dites di Mac (10/10). Blok render aerender masih menunggu keputusan input ke comp.
+- Status: aturan path dan alur input diimplementasikan dan dites di Mac (path 10/10, input AE 23/23 dengan ffprobe + aerender palsu).
+- Input ke comp (Opsi A, disetujui user): worker menyalin hasil Topaz ke `AE_WORK_DIR/input<ext>` sebelum aerender; .aep tidak diubah (template wajib punya footage placeholder bernama `input`). `AE_WORK_DIR` dibuat otomatis dan input lama dihapus dulu.
+- `-s 0 -e <durasi>`: durasi dibaca ffprobe (folder yang sama dengan `TOPAZ_FFMPEG_PATH`); nilai = durasi bulat - 1, minimal 0.
+- Orientasi: ffprobe memilih `<preset>.aep` (landscape) atau `<preset>_portrait.aep` (portrait). Orientasi tidak terbaca -> landscape (hanya peringatan di log). Portrait tanpa file -> job failed.

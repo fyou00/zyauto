@@ -30,7 +30,10 @@ Commit terakhir: feat: worker pipeline bertahap topaz -> ae -> encoding dengan F
 - Encoding akhir topaz_cc: AE render ke .mov (QuickTime), lalu HandBrakeCLI encode ke .mp4 dengan preset NVENC dari presets/. Bukan ffmpeg. topaz_only tidak di-encode ulang.
 - Preset CC: id stabil + label UI + path .aep, di config.py. Dropdown hanya tampilan; server tetap memvalidasi id.
 - Path .aep: `AE_PRESET_DIR` dari .env (kosong -> `BASE_DIR / "presets"`), `aep_path = AE_PRESET_DIR / "<file>.aep"` (pathlib, tanpa hardcode mesin). `presets/` di .gitignore; file .aep tidak di-commit, hanya daftar preset di config.py.
-- `_run_aerender`: cek config dulu, lalu cek file .aep. Jika file tidak ada -> job failed "AE: file preset tidak ditemukan: <nama file>" (nama saja, tanpa path lokal), bukan crash. `-project` akan diisi `str(aep_path)`. FAKE_AE tidak membaca aep_path sama sekali.
+- Input AE (Opsi A, disetujui user): sebelum aerender, hasil Topaz disalin ke `AE_WORK_DIR/<input><ext>`; file .aep tidak diubah (template memakai footage placeholder bernama `input`). `AE_WORK_DIR` dibuat otomatis, dan input lama (`input.*`) dihapus sebelum menyalin.
+- Durasi render: `aerender -s 0 -e <durasi bulat - 1>`. Durasi dibaca lewat ffprobe (di folder yang sama dengan `TOPAZ_FFMPEG_PATH`), bukan tebakan. `-e 0` dipakai untuk video di bawah 2 detik.
+- Orientasi: ffprobe menentukan landscape/portrait. Portrait memakai `<preset>_portrait.aep`; jika tidak ada -> job failed dengan pesan jelas. Landscape memakai `<preset>.aep`.
+- FAKE_AE=1 hanya memverifikasi urutan tahap dan pemanggilan; tidak membaca .aep, tidak memakai AE_WORK_DIR, tidak menjalankan aerender.
 - Langkah 3: radio layanan wajib (atribut `required`, tanpa default terpilih). Dropdown preset diisi HTMX lewat GET /ui/cc-presets?service=... (tanpa JS inline). Daftar preset berasal dari config.CC_PRESETS, template hanya loop.
 - Validasi server di `validate_service()`: service kosong/tidak dikenal -> 400 "Pilih layanan (topaz_only atau topaz_cc)"; topaz_cc tanpa preset -> 400 "Pilih preset CC untuk layanan topaz_cc"; id preset tidak ada di config -> 400 "Preset tidak dikenal"; topaz_only mengabaikan cc_preset (disimpan NULL). Validasi dijalankan SEBELUM file disimpan, supaya tidak ada file yatim di data/uploads.
 - Kolom tabel: Layanan dan Tahap (stage ditampilkan "-" jika NULL). CC_PRESETS tidak lagi dibaca dari .env.
@@ -94,6 +97,17 @@ Semua tes memakai DB dan folder sementara di /tmp. DB asli tidak disentuh.
 - FAKE_AE=1 dengan AE_PRESET_DIR tidak ada: tetap sukses (tidak membaca .aep). LULUS.
 - `presets/` ada di .gitignore. LULUS.
 - Regresi: `tests_queue.py` A/B, tes HTTP 5 preset, tes waktu render 19/19. LULUS.
+
+### Input ke AE (Opsi A) dan orientasi
+- Landscape: `-project` = `<preset>.aep`, argumen `-comp`, `-OMtemplate`, `-output`, `-s 0`, `-e <durasi-1>` sesuai (12.4 dtk -> 11). LULUS.
+- Input hasil Topaz disalin ke `AE_WORK_DIR/input.mov`, isi identik. LULUS.
+- Input lama (`input.mp4`) dihapus sebelum menyalin; file lain di AE_WORK_DIR tidak dihapus. LULUS.
+- Portrait: `-project` = `<preset>_portrait.aep`, `-e` sesuai durasi. LULUS.
+- Portrait tanpa file `_portrait` -> `AE: template portrait tidak ditemukan: ...`. LULUS.
+- ffprobe gagal -> ToolError (job failed), tanpa traceback. LULUS.
+- FAKE_AE=1: tidak membuat AE_WORK_DIR, aerender tidak dipanggil, output hasil salin. LULUS.
+- 23/23 cek lulus (ffprobe + aerender palsu di /tmp, tidak ikut commit).
+- Regresi: `tests_queue.py` A/B, path .aep 10/10, waktu render 19/19. LULUS.
 
 Belum dites: AE asli (aerender), HandBrakeCLI asli, NVENC di Windows.
 
