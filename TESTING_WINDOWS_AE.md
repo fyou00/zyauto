@@ -167,6 +167,7 @@ job <id> done
 | `HANDBRAKE_CLI_PATH` dikosongkan | `HandBrake belum dikonfigurasi, kosong: ...` |
 | Preset HandBrake non-NVENC | `HandBrake: preset bukan NVENC, tahap encoding belum siap` |
 | Nama preset salah | `HandBrake: preset tidak ditemukan di file preset` |
+| aerender sukses tapi hasil .mov kosong / tanpa frame | `AE: output tidak valid (...)` (job `failed`, bukan `done`) |
 
 Di semua kasus: status job `failed`, worker tetap jalan, dan tidak ada proses `aerender.exe` / `HandBrakeCLI.exe` yang tertinggal di Task Manager.
 

@@ -44,3 +44,11 @@ def probe(path):
         "duration": duration,
         "orientation": "landscape" if width >= height else "portrait",
     }
+
+
+def check_output(path, label):
+    """Hasil tahap asli (aerender/HandBrake) harus video dengan durasi > 0. Kalau tidak, tahap gagal."""
+    try:
+        probe(path)
+    except ToolError as e:
+        raise MediaError(f"{label}: output tidak valid ({e})")

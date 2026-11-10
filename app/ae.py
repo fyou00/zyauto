@@ -88,3 +88,4 @@ def _run_aerender(input_path, output_path, preset, timeout_sec, orientation):
         "-e", str(max(0, int(round(meta["duration"])) - 1)),
     ]
     run_real(cmd, timeout_sec, "AE", output_path)
+    media.check_output(output_path, "AE")

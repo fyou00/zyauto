@@ -12,7 +12,7 @@ Tujuannya untuk enchancement video dengan resolusi asli (original). Buktikan alu
 - [x] 6. Recovery: job 'processing' kembali 'queued' saat worker start; timeout job
 - [x] 7. Integrasi Topaz asli (enhancement, tanpa upscaling). Kode selesai; tes Topaz asli di Windows: PENDING (user)
 
-Commit terakhir: feat: worker pipeline bertahap topaz -> ae -> encoding dengan FAKE_AE dan HandBrake
+Commit terakhir: fix: validasi output tahap AE dan HandBrake, stderr tool ke log
 
 ## Layanan AE (rencana lengkap di PLAN.md, bagian "Layanan AE")
 - [x] 2. DB: kolom service, cc_preset, stage, intermediate_path + migrasi
@@ -35,6 +35,11 @@ Commit terakhir: feat: worker pipeline bertahap topaz -> ae -> encoding dengan F
 - Orientasi: ffprobe menentukan landscape/portrait. Portrait memakai `<preset>_portrait.aep`; jika tidak ada -> job failed dengan pesan jelas. Landscape memakai `<preset>.aep`.
 - FAKE_AE=1 hanya memverifikasi urutan tahap dan pemanggilan; tidak membaca .aep, tidak memakai AE_WORK_DIR, tidak menjalankan aerender.
 - Worker dihentikan (SIGINT/SIGTERM/SIGBREAK): pohon proses tahap yang berjalan ikut dibunuh (`proc.kill_active()`), jadi tidak ada aerender yatim. Job tertinggal processing dan dikembalikan ke queued saat worker start berikutnya. Perbaikan ini menutup known issue yang ditemukan saat menulis TESTING_WINDOWS_AE.md.
+- Validasi output tahap asli: setelah aerender dan HandBrake, `media.check_output()` memanggil ffprobe; output 0 byte, tanpa video, atau durasi <= 0 -> tahap gagal "AE/HandBrake: output tidak valid (...)", job `failed`. Sebelumnya `run_real` hanya mengecek file ada, jadi render AE kosong lolos sebagai `done` (output hitam 0 detik, ditemukan user di Windows). Mode FAKE tidak diprobe (file fake bukan video asli).
+- stderr tool (aerender/HandBrake/Topaz) kini selalu dicetak ke log worker dengan awalan `[label]`, bukan hanya saat gagal. stderr tetap tidak masuk DB/UI.
+- Tes: `python tests_ae.py` (stub aerender dan HandBrakeCLI, butuh ffmpeg): 6/6 cek lulus (output kosong -> gagal, output valid -> lolos, `-s 0 -e 2` untuk input 3 detik, stderr sukses tercatat). Regresi `tests_queue.py` skenario A, B, C tetap lulus.
+- MASALAH TERBUKA: penyebab output hitam di Windows belum terbukti. Dugaan: `-e` dipakai sebagai detik padahal aerender menerima nomor frame. Menunggu perintah manual user dan output `aerender -help`. Argumen `-s/-e` sengaja belum diubah.
+
 
 - Langkah 3: radio layanan wajib (atribut `required`, tanpa default terpilih). Dropdown preset diisi HTMX lewat GET /ui/cc-presets?service=... (tanpa JS inline). Daftar preset berasal dari config.CC_PRESETS, template hanya loop.
 - Validasi server di `validate_service()`: service kosong/tidak dikenal -> 400 "Pilih layanan (topaz_only atau topaz_cc)"; topaz_cc tanpa preset -> 400 "Pilih preset CC untuk layanan topaz_cc"; id preset tidak ada di config -> 400 "Preset tidak dikenal"; topaz_only mengabaikan cc_preset (disimpan NULL). Validasi dijalankan SEBELUM file disimpan, supaya tidak ada file yatim di data/uploads.

@@ -101,8 +101,10 @@ def run_real(cmd, timeout_sec, label, output_path):
         raise ToolError(f"{label} tidak bisa dijalankan")
     except subprocess.TimeoutExpired:
         raise ToolError(f"{label}: timeout setelah {timeout_sec} detik")
+    # stderr dicatat ke log worker walau sukses, supaya warning tool (mis. footage hilang) terlihat
+    if stderr.strip():
+        print(f"[{label}] {stderr.strip()}", file=sys.stderr, flush=True)
     if returncode != 0:
-        print(stderr.strip(), file=sys.stderr, flush=True)
         raise ToolError(f"{label} gagal")
     if not Path(output_path).exists():
         raise ToolError(f"{label}: output tidak ditemukan")

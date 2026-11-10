@@ -7,7 +7,7 @@ import json
 import os
 from pathlib import Path
 
-from app import config
+from app import config, media
 from app.proc import ToolError, run_fake, run_real
 
 LABEL = "HandBrake"
@@ -48,6 +48,7 @@ def run_encode(input_path, output_path, timeout_sec):
         "-Z", config.HANDBRAKE_PRESET_NAME,
     ]
     run_real(cmd, timeout_sec, LABEL, output_path)
+    media.check_output(output_path, LABEL)
 
 
 def _check_nvenc_preset():
