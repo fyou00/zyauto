@@ -14,12 +14,17 @@ class ToolError(Exception):
     """Gagal di salah satu tahap pipeline. Pesan boleh tampil di UI (tanpa path lokal atau stderr)."""
 
 
+# Proses yang sedang berjalan. Dipakai kill_active() saat worker dihentikan (Ctrl+C / SIGTERM),
+# supaya aerender/ffmpeg/HandBrake tidak tertinggal sebagai proses yatim.
+_active = set()
+
+
 def start(cmd, env, capture_stdout=False):
     """Menjalankan proses. Melempar OSError jika executable tidak bisa dijalankan."""
     kwargs = {}
     if os.name != "nt":
         kwargs["start_new_session"] = True  # pgid = pid, supaya seluruh grup bisa dibunuh
-    return subprocess.Popen(
+    proc = subprocess.Popen(
         cmd,
         stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE if capture_stdout else subprocess.DEVNULL,
@@ -30,6 +35,15 @@ def start(cmd, env, capture_stdout=False):
         env=env,
         **kwargs,
     )
+    _active.add(proc)
+    return proc
+
+
+def kill_active():
+    """Bunuh seluruh pohon proses semua tahap yang sedang berjalan. Aman dipanggil dari signal handler."""
+    for proc in list(_active):
+        if proc.poll() is None:
+            kill_tree(proc)
 
 
 def kill_tree(proc):
@@ -54,6 +68,8 @@ def run_with_timeout(cmd, env, timeout_sec):
         kill_tree(proc)
         proc.communicate()
         raise
+    finally:
+        _active.discard(proc)
     return proc.returncode, stderr
 
 
@@ -69,6 +85,8 @@ def run_capture(cmd, timeout_sec, label):
         kill_tree(proc)
         proc.communicate()
         raise ToolError(f"{label}: timeout setelah {timeout_sec} detik")
+    finally:
+        _active.discard(proc)
     if proc.returncode != 0:
         print(stderr.strip(), file=sys.stderr, flush=True)
         raise ToolError(f"{label} gagal")

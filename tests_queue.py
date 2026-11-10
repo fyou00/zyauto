@@ -6,7 +6,9 @@ Setiap skenario berjalan di salinan app/ dalam folder sementara, jadi data/ dan 
 Yang dibuktikan: satu job selesai penuh (termasuk tahap AE dan encoding) sebelum job berikutnya mulai.
 """
 
+import os
 import shutil
+import signal
 import sqlite3
 import subprocess
 import sys
@@ -165,6 +167,80 @@ JOBS = [
 ]
 
 
+def run_stop_scenario():
+    """C: worker dihentikan (SIGINT) saat tahap AE. Tidak ada proses yatim, job kembali ke queued."""
+    print("\n=== C: worker dihentikan saat tahap AE (SIGINT) ===")
+    tmp = Path(tempfile.mkdtemp())
+    build_copy(tmp)
+    env = {
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "FAKE_TOPAZ": "1", "FAKE_AE": "1", "FAKE_HANDBRAKE": "1",
+        "FAKE_AE_DELAY_SEC": "40",  # cukup lama supaya sempat dihentikan di tengah tahap AE
+        "FAKE_HANDBRAKE_DELAY_SEC": "1",
+    }
+    subprocess.run([sys.executable, "-c", "from app import db; db.init_db()"], cwd=tmp, env=env, check=True)
+    insert_jobs(tmp, [JOBS[0]])
+
+    log_path = tmp / "worker.log"
+    with log_path.open("w", encoding="utf-8") as fh:
+        worker = subprocess.Popen([sys.executable, "-m", "app.worker"], cwd=tmp, env=env,
+                                  stdout=fh, stderr=subprocess.STDOUT)
+        deadline = time.time() + 40
+        while time.time() < deadline:
+            if log_path.exists() and "stage ae start" in log_path.read_text(encoding="utf-8"):
+                break
+            time.sleep(0.3)
+        time.sleep(1)
+        worker.send_signal(signal.SIGINT)
+        try:
+            worker.wait(timeout=20)
+        except subprocess.TimeoutExpired:
+            worker.kill()
+            worker.wait()
+    time.sleep(1)
+
+    log = log_path.read_text(encoding="utf-8")
+    results = []
+
+    def check(cond, msg):
+        results.append(bool(cond))
+        print(("  OK    " if cond else "  GAGAL ") + msg)
+
+    try:
+        survivors = [p for p in subprocess.run(["pgrep", "-f", str(tmp)], capture_output=True,
+                                               text=True).stdout.split() if p]
+        for pid in survivors:
+            subprocess.run(["kill", "-9", pid], capture_output=True)
+    except OSError:
+        survivors = []
+
+    rows = fetch_rows(tmp)
+    check("stage ae start" in log, "job sempat masuk tahap AE")
+    check(not survivors, f"tidak ada proses anak tersisa {survivors}")
+    check("dihentikan (sinyal" in log, "worker mencatat penghentian")
+    check(not list((tmp / "data" / "intermediates").glob("*")), "file perantara dibersihkan")
+    check(rows["job1"]["status"] == "processing", "job tertinggal processing sebelum recovery")
+
+    log2 = tmp / "worker2.log"
+    with log2.open("w", encoding="utf-8") as fh:
+        w2 = subprocess.Popen([sys.executable, "-m", "app.worker"], cwd=tmp,
+                              env={**env, "FAKE_AE_DELAY_SEC": "1"}, stdout=fh, stderr=subprocess.STDOUT)
+        deadline = time.time() + 30
+        while time.time() < deadline:
+            if "recovery:" in log2.read_text(encoding="utf-8"):
+                break
+            time.sleep(0.3)
+        time.sleep(0.5)
+        w2.terminate()
+        try:
+            w2.wait(timeout=20)
+        except subprocess.TimeoutExpired:
+            w2.kill()
+            w2.wait()
+    check("1 dikembalikan ke queued" in log2.read_text(encoding="utf-8"), "job dikembalikan ke queued")
+    return all(results), tmp
+
+
 def main():
     ok_a, _ = run_scenario(
         "A: order 1 topaz_cc, order 2 topaz_only (semua sukses)",
@@ -174,10 +250,12 @@ def main():
         "B: AE job 1 gagal -> job 1 failed, job 2 tetap jalan",
         [dict(j) for j in JOBS], {"FAKE_AE_FAIL": "1"}, [("job1", "failed"), ("job2", "done")],
     )
+    ok_c, _ = run_stop_scenario()
     print("\n=== RINGKASAN ===")
     print(f"skenario A: {'LULUS' if ok_a else 'GAGAL'}")
     print(f"skenario B: {'LULUS' if ok_b else 'GAGAL'}")
-    sys.exit(0 if (ok_a and ok_b) else 1)
+    print(f"skenario C: {'LULUS' if ok_c else 'GAGAL'}")
+    sys.exit(0 if (ok_a and ok_b and ok_c) else 1)
 
 
 if __name__ == "__main__":

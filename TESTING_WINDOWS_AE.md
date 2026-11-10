@@ -172,8 +172,8 @@ Di semua kasus: status job `failed`, worker tetap jalan, dan tidak ada proses `a
 
 Tes tambahan yang penting: hentikan worker dengan Ctrl+C **saat** `stage ae start` sudah muncul. Jalankan worker lagi. Harapan: log recovery menyebut job dikembalikan ke `queued`, dan job itu diproses ulang dari awal. Cek juga tidak ada `aerender.exe` yatim.
 
-### Known issue: Ctrl+C saat tahap AE
-Tes Mac menunjukkan bahwa Ctrl+C langsung pada worker saat `stage ae` sedang berjalan masih dapat meninggalkan proses anak. Job tertinggal `processing` dan akan di-recovery menjadi `queued` saat worker berikutnya start, tetapi proses AE lama bisa masih hidup. **Jangan menjalankan tes ulang atau deploy ke Windows sebelum masalah ini diperbaiki.**
+### Perbaikan: Ctrl+C saat tahap AE
+Dulu Ctrl+C pada worker saat `stage ae` berjalan meninggalkan proses anak (aerender) yang masih hidup, sementara job tertinggal `processing`. Sekarang worker memasang handler sinyal: SIGINT (Ctrl+C), SIGTERM, dan SIGBREAK (Ctrl+Break di Windows) akan membunuh pohon proses tahap yang sedang berjalan. Job tetap tertinggal `processing` dan dikembalikan ke `queued` saat worker start berikutnya.
 
 
 ## 10. Yang perlu dilaporkan balik

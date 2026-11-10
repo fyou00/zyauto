@@ -8,6 +8,8 @@ Jalankan: python -m app.worker
 Tes tanpa GPU/AE: FAKE_TOPAZ=1 FAKE_AE=1 FAKE_HANDBRAKE=1 python -m app.worker
 """
 
+import os
+import signal
 import time
 from datetime import datetime
 from pathlib import Path
@@ -15,7 +17,7 @@ from pathlib import Path
 from app import config, db, media
 from app.ae import run_ae
 from app.handbrake import run_encode
-from app.proc import ToolError
+from app.proc import ToolError, kill_active
 from app.topaz import run_upscale
 
 
@@ -96,7 +98,29 @@ def process_job(job):
         cleanup_intermediates(job_id)
 
 
+def _stop(signum, frame):
+    """Worker dihentikan: matikan pohon proses tahap yang berjalan, lalu keluar.
+
+    Job tertinggal 'processing' dan ditangani recovery saat worker start berikutnya.
+    File perantara dibersihkan oleh finally di process_job.
+    """
+    log(f"worker dihentikan (sinyal {signum}), mematikan proses tahap yang berjalan")
+    kill_active()
+    raise SystemExit(128 + signum)
+
+
+def install_signal_handlers():
+    names = ["SIGINT", "SIGTERM"]
+    if os.name == "nt":
+        names.append("SIGBREAK")  # Ctrl+Break di Windows
+    for name in names:
+        sig = getattr(signal, name, None)
+        if sig is not None:
+            signal.signal(sig, _stop)
+
+
 def main():
+    install_signal_handlers()
     db.init_db()
     requeued, failed = db.reset_processing_jobs()
     if requeued or failed:

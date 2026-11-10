@@ -34,6 +34,8 @@ Commit terakhir: feat: worker pipeline bertahap topaz -> ae -> encoding dengan F
 - Durasi render: `aerender -s 0 -e <durasi bulat - 1>`. Durasi dibaca lewat ffprobe (di folder yang sama dengan `TOPAZ_FFMPEG_PATH`), bukan tebakan. `-e 0` dipakai untuk video di bawah 2 detik.
 - Orientasi: ffprobe menentukan landscape/portrait. Portrait memakai `<preset>_portrait.aep`; jika tidak ada -> job failed dengan pesan jelas. Landscape memakai `<preset>.aep`.
 - FAKE_AE=1 hanya memverifikasi urutan tahap dan pemanggilan; tidak membaca .aep, tidak memakai AE_WORK_DIR, tidak menjalankan aerender.
+- Worker dihentikan (SIGINT/SIGTERM/SIGBREAK): pohon proses tahap yang berjalan ikut dibunuh (`proc.kill_active()`), jadi tidak ada aerender yatim. Job tertinggal processing dan dikembalikan ke queued saat worker start berikutnya. Perbaikan ini menutup known issue yang ditemukan saat menulis TESTING_WINDOWS_AE.md.
+
 - Langkah 3: radio layanan wajib (atribut `required`, tanpa default terpilih). Dropdown preset diisi HTMX lewat GET /ui/cc-presets?service=... (tanpa JS inline). Daftar preset berasal dari config.CC_PRESETS, template hanya loop.
 - Validasi server di `validate_service()`: service kosong/tidak dikenal -> 400 "Pilih layanan (topaz_only atau topaz_cc)"; topaz_cc tanpa preset -> 400 "Pilih preset CC untuk layanan topaz_cc"; id preset tidak ada di config -> 400 "Preset tidak dikenal"; topaz_only mengabaikan cc_preset (disimpan NULL). Validasi dijalankan SEBELUM file disimpan, supaya tidak ada file yatim di data/uploads.
 - Kolom tabel: Layanan dan Tahap (stage ditampilkan "-" jika NULL). CC_PRESETS tidak lagi dibaca dari .env.
@@ -108,6 +110,11 @@ Semua tes memakai DB dan folder sementara di /tmp. DB asli tidak disentuh.
 - FAKE_AE=1: tidak membuat AE_WORK_DIR, aerender tidak dipanggil, output hasil salin. LULUS.
 - 23/23 cek lulus (ffprobe + aerender palsu di /tmp, tidak ikut commit).
 - Regresi: `tests_queue.py` A/B, path .aep 10/10, waktu render 19/19. LULUS.
+
+### Worker dihentikan saat tahap AE (skenario C di tests_queue.py)
+- SIGINT (Ctrl+C) dan SIGTERM: tidak ada proses anak tersisa, file perantara dibersihkan, worker keluar dengan kode bukan 0. LULUS (16/16).
+- Job tertinggal `processing`, lalu worker start berikutnya: `recovery: 1 dikembalikan ke queued`. LULUS.
+- `tests_queue.py` sekarang punya skenario A, B, dan C; ketiganya LULUS.
 
 Belum dites: AE asli (aerender), HandBrakeCLI asli, NVENC di Windows.
 
