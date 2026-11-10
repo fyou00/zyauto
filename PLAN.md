@@ -195,7 +195,7 @@ Status: BELUM bisa dijalankan. Menunggu keputusan "cara input hasil Topaz masuk 
 ### Langkah tes (urutan wajib)
 1. Baca opsi yang didukung versi AE ini: `& "C:\Program Files\Adobe\Adobe After Effects <versi>\Support Files\aerender.exe" -help`. Opsi yang dipakai di kode harus sesuai output ini (tidak dari ingatan atau dokumentasi lama).
 2. Render manual dari PowerShell dengan opsi dari langkah 1 (project, comp, output .mov, output module). Harapan: file .mov terbentuk. Catat durasi dan ukuran file.
-3. Isi `.env`: `FAKE_AE=0`, `AE_AERENDER_PATH`, `AE_COMP_NAME`, `AE_OM_TEMPLATE`. Lalu cek dengan `python -c` seperti di TESTING_WINDOWS.md (bagian A).
+3. Isi `.env`: `FAKE_AE=0`, `AE_AERENDER_PATH`, `AE_COMP_NAME`, `AE_OM_TEMPLATE`. Lalu cek dengan `python -c "from app import config as c; ..."` seperti di `TESTING_WINDOWS_AE.md` bagian 5.
 4. Tes gagal dulu: `AE_AERENDER_PATH` diisi path salah. Harapan: job `topaz_cc` failed dengan pesan "AE tidak bisa dijalankan", worker tetap hidup.
 5. Tes sukses: upload `topaz_cc` dengan video pendek. Harapan di log worker: `stage ae start`, `stage ae end`, lalu `stage encoding start/end` (HandBrake), `done`. Simpan log lengkap.
 6. Tes timeout AE: turunkan batas waktu sementara (satu kali, lalu kembalikan). Harapan: job failed dengan pesan timeout, dan tidak ada `aerender.exe` yang masih berjalan di Task Manager.
