@@ -16,6 +16,8 @@ Status dan keputusan terkini ada di NOTES.md.
 - Web: uvicorn app.main:app --reload
 - Worker: python -m app.worker
 - Tes tanpa GPU: FAKE_TOPAZ=1 python -m app.worker
+- Tes tanpa AE: FAKE_AE=1 python -m app.worker
+- Tes tanpa Handbrake: FAKE_HANDBRAKE=1 python -m app.worker
 - (Windows) aktivasi venv: .venv\Scripts\activate ; env var lewat file .env
 
 # Batasan prototype (jangan dilanggar)
